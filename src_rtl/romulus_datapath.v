@@ -87,7 +87,7 @@ module romulus_datapath (/*AUTOARG*/
       if (fullcnt) begin: cnt_correction
          correctfullperm PERMC (.tko(tkc),.tki(domainseparator));
       end
-      else begin
+      else begin: half_cnt_correction
          correcthalfperm PERMC (.tko(tkc),.tki(domainseparator));
       end
    endgenerate
@@ -154,7 +154,7 @@ module state_update (/*AUTOARG*/
       end
    endgenerate
 
-   assign state_buf = state[127:96-buswidth];
+   assign state_buf = state[127:128-buswidth];
 
    generate
       for (i = 0; i < buswidth/8; i = i + 1) begin:gmatrix
