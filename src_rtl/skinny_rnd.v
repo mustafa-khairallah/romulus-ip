@@ -38,7 +38,7 @@ module skinny_rnd (/*AUTOARG*/
 
    // ShiftRows
    generate
-      for (i = 31; i >= 0; i = i - 1) begin:shrows
+      for (i = 31; i >= 0; i = i - 1) begin:first_rnd
          assign shr[0][i+96] = atk[0][i+96];
          if (i >= 24) begin:row1_top
             assign shr[0][i+64] = atk[0][i-24+64];
@@ -58,13 +58,12 @@ module skinny_rnd (/*AUTOARG*/
          else begin:row3_btm
             assign shr[0][i] = atk[0][i+24];
          end
+         // MixColumn
+         assign mxc[0][i+64] = shr[0][i+96];
+         assign mxc[0][i+32] = shr[0][i+64] ^ shr[0][i+32];
+         assign mxc[0][i]    = shr[0][i+96] ^ shr[0][i+32];
+         assign mxc[0][i+96] = shr[0][i]    ^ shr[0][i];
       end // block: shrows
-
-      // MixColumn
-      assign mxc[0][i+64] = shr[0][i+96];
-      assign mxc[0][i+32] = shr[0][i+64] ^ shr[0][i+32];
-      assign mxc[0][i]    = shr[0][i+96] ^ shr[0][i+32];
-      assign mxc[0][i+96] = shr[0][i]    ^ shr[0][i];
 
    endgenerate
 
