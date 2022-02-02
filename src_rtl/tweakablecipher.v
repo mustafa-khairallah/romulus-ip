@@ -13,7 +13,7 @@ module tweakablecipher (/*AUTOARG*/
    input [63+64*fullcnt:0]  roundcnt;
    input [5+6*(numrnd-1):0] constant;
 
-   roundfunction #(.fullcnt(fullcnt), .num_rnd(num_rnd)) skinny_rnd (.nextcnt(nextcnt),
+   roundfunction #(.fullcnt(fullcnt), .numrnd(numrnd)) skinny_rnd (.nextcnt(nextcnt),
                                                                      .nextkey(nextkey),
                                                                      .nexttweak(nexttweak),
                                                                      .nextstate(nextstate),
