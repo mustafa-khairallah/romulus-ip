@@ -4,7 +4,7 @@ module deoxys_rnd (/*AUTOARG*/
    // Inputs
    roundkey, roundtweak, roundstate, roundcnt, constant
    ) ;
-   parameter numrnd = 16;
+   parameter numrnd = 1;
    parameter fullcnt = 1;
 
    output [63+64*fullcnt:0] nextcnt;
@@ -45,11 +45,11 @@ module deoxys_rnd (/*AUTOARG*/
          assign shr[i][ 31: 0] = {sb[i][  7: 0],sb[i][31: 8]};
 
          // MixColumn Coeffs.
-         for (j = 0; j < 16; j = j + 1) begin:sbox_layer
+         for (j = 0; j < 16; j = j + 1) begin:mxc_coeff
             assign x2[i][8*j+7:8*j] = {shr[i][8*j+6:8*j],1'b0} ^
                                        {3'b0,shr[i][8*j+7],
                                         shr[i][8*j+7],
-                                        1'b0
+                                        1'b0,
                                         shr[i][8*j+7],
                                         shr[i][8*j+7]
                                        };
