@@ -217,10 +217,10 @@ module tkz_update (/*AUTOARG*/
 
    output [63+fullcnt*64:0] tkz;
 
-   input [63fullcnt*64:0]   tkztbc, tkzcorrect;
+   input [63+fullcnt*64:0]   tkztbc, tkzcorrect;
    input                    clk, rst, tbc, en;
 
-   reg [63fullcnt*64:0]     state;
+   reg [63+fullcnt*64:0]     state;
 
    always @ (posedge clk) begin
       if (rst) begin
