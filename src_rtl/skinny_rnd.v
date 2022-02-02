@@ -37,35 +37,16 @@ module skinny_rnd (/*AUTOARG*/
    assign atk[0] = rkey[0] ^ sb[0];
 
    // ShiftRows
-   generate
-      for (i = 31; i >= 0; i = i - 1) begin:first_rnd
-         assign shr[0][i+96] = atk[0][i+96];
-         if (i >= 24) begin:row1_top
-            assign shr[0][i+64] = atk[0][i-24+64];
-         end
-         else begin:row1_btm
-            assign shr[0][i+64] = atk[0][i+8+64];
-         end
-         if (i >= 16) begin:row2_top
-            assign shr[0][i+32] = atk[0][i-16+32];
-         end
-         else begin:row2_btm
-            assign shr[0][i+32] = atk[0][i+16+32];
-         end
-         if (i >= 8) begin:row3_top
-            assign shr[0][i] = atk[0][i-8];
-         end
-         else begin:row3_btm
-            assign shr[0][i] = atk[0][i+24];
-         end
-         // MixColumn
-         assign mxc[0][i+64] = shr[0][i+96];
-         assign mxc[0][i+32] = shr[0][i+64] ^ shr[0][i+32];
-         assign mxc[0][i]    = shr[0][i+96] ^ shr[0][i+32];
-         assign mxc[0][i+96] = shr[0][i]    ^ shr[0][i];
-      end // block: shrows
+   assign shr[0][127:96] =  atk[0][127:96];
+   assign shr[0][ 95:64] = {atk[0][ 71:64],atk[0][95:72]};
+   assign shr[0][ 63:32] = {atk[0][ 47:32],atk[0][63:48]};
+   assign shr[0][ 31: 0] = {atk[0][ 23: 0],atk[0][31:24]};
 
-   endgenerate
+   // MixColumn
+   assign mxc[0][ 95:64] = shr[0][127:96];
+   assign mxc[0][ 63:32] = shr[0][ 95:64] ^ shr[0][63:32];
+   assign mxc[0][ 31: 0] = shr[0][127:96] ^ shr[0][63:32];
+   assign mxc[0][127:96] = shr[0][ 31: 0] ^ mxc[0][31: 0];
 
    generate
       for (i = 1; i < numrnd; i = i + 1) begin:unrolled_rounds
