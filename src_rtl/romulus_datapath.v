@@ -198,9 +198,15 @@ module tkx_update (/*AUTOARG*/
 
    reg [127:0]          state;
 
+   generate
    always @ (posedge clk) begin
       if (rst) begin
-         state <= {state[128-buswidth-1:0],sdi};
+         if (buswidth == 128) begin:full_bus_width
+            state <= sdi;
+         end
+         else begin:half_bus_width
+            state <= {state[128-buswidth-1:0],sdi};
+         end
       end
       else if (en) begin
          if (tbc) begin
@@ -210,7 +216,8 @@ module tkx_update (/*AUTOARG*/
             state <= tkxcorrect;
          end
       end
-   end
+   end // always @ (posedge clk)
+   endgenerate
 
 endmodule // tkx_update
 
