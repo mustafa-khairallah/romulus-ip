@@ -144,8 +144,15 @@ module state_update (/*AUTOARG*/
       end
    endgenerate
 
-   assign si = {state[128-buswidth-1:0],
-                pdi_eff^state[127:128-buswidth]};
+   generate
+      if (buswidth == 128) begin:full_bus_width
+         assign si = pdi_eff^state[127:0];
+      end
+      else begin:part_bus_width
+         assign si = {state[128-buswidth-1:0],
+                      pdi_eff^state[127:128-buswidth]};
+      end
+   endgenerate
 
    assign state_buf = state[127:96-buswidth];
 
