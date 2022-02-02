@@ -7,7 +7,7 @@ module romulus_datapath (/*AUTOARG*/
    ) ;
    parameter buswidth = 128;
    parameter constantwidth = 12;
-   parameter fullcnt = 0; // 1 if we want full 128 bit tweakey physically, 
+   parameter fullcnt = 0; // 1 if we want full 128 bit tweakey physically,
    // 0 for seleting half the key (useful for skinny)
 
    output [buswidth-1:0] pdo;
