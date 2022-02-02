@@ -222,16 +222,15 @@ module tkz_update (/*AUTOARG*/
 
    reg [63+fullcnt*64:0]     state;
 
+   generate
    always @ (posedge clk) begin
       if (rst) begin
-         generate
               if (fullcnt == 1) begin:initial_counter_state
               state <= 128'h01000000000000000000000000000000;
            end
            else begin
               state <= 64'h0100000000000000;
            end
-         endgenerate
       end
       else if (en) begin
          if (tbc) begin
@@ -241,7 +240,8 @@ module tkz_update (/*AUTOARG*/
             state <= tkzcorrect;
          end
       end
-   end
+   end // always @ (posedge clk)
+   endgenerate
 
 endmodule // tkz_update
 
