@@ -81,7 +81,7 @@ module deoxys_rnd (/*AUTOARG*/
       end // block: unrolled_rounds
 
       assign nextstate = (constant[8*numrnd-1:8*numrnd-8] == 8'h39) ?
-                         mxc[numrnd-1] ^ rkey[numrnd] : mxc[numrnd];
+                         mxc[numrnd-1] ^ rkey[numrnd] : mxc[numrnd-1];
 
    endgenerate
 
