@@ -60,20 +60,20 @@ module deoxys_rnd (/*AUTOARG*/
          // Mixcolumn
          assign mxc[i][127:96] = x2[i][127:96] ^
                                  x3[i][95:64] ^
-                                 shr[63:32] ^
-                                 shr[31:0];
+                                 shr[i][63:32] ^
+                                 shr[i][31:0];
          assign mxc[i][95:64]  = shr[i][127:96] ^
                                  x2[i][95:64] ^
-                                 x3[63:32] ^
-                                 shr[31:0];
+                                 x3[i][63:32] ^
+                                 shr[i][31:0];
          assign mxc[i][63:32]  = shr[i][127:96] ^
                                  shr[i][95:64] ^
-                                 x2[63:32] ^
-                                 x3[31:0];
+                                 x2[i][63:32] ^
+                                 x3[i][31:0];
          assign mxc[i][31:0]   = x3[i][127:96] ^
                                  shr[i][95:64] ^
-                                 shr[63:32] ^
-                                 x2[31:0];
+                                 shr[i][63:32] ^
+                                 x2[i][31:0];
 
          if (i < (numrnd-1)) begin:second_atk
             assign atk[i+1] = rkey[i] ^ mxc[i];
