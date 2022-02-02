@@ -13,18 +13,18 @@ module skinny_rnd (/*AUTOARG*/
    input [63+64*fullcnt:0]  roundcnt;
    input [5+6*(numrnd-1):0] constant;
 
-   genvar    i, j;
+   genvar                   i, j;
 
-   wire [63+64*fullcnt:0] rndcnt [numrnd:0];
-   wire [127:0] sb [0:numrnd-1];
-   wire [127:0] rkey [0:numrnd-1];
-   wire [127:0] atk [0:numrnd-1];
-   wire [127:0] shr [0:numrnd-1];
-   wire [127:0] mxc [0:numrnd-1];
-   wire [127:0] rndkey [0:numrnd];
-   wire [127:0] rndtweak [0:numrnd];
+   wire [63+64*fullcnt:0]   rndcnt [numrnd:0];
+   wire [127:0]             sb [0:numrnd-1];
+   wire [127:0]             rkey [0:numrnd-1];
+   wire [127:0]             atk [0:numrnd-1];
+   wire [127:0]             shr [0:numrnd-1];
+   wire [127:0]             mxc [0:numrnd-1];
+   wire [127:0]             rndkey [0:numrnd];
+   wire [127:0]             rndtweak [0:numrnd];
 
-   wire [5:0]   rndconstant [numrnd-1:0];
+   wire [5:0]               rndconstant [numrnd-1:0];
 
    generate
       for (j = 0; j < 16; j = j + 1) begin:sbox_round0
@@ -52,7 +52,7 @@ module skinny_rnd (/*AUTOARG*/
       for (i = 1; i < numrnd; i = i + 1) begin:unrolled_rounds
          for (j = 0; j < 16; j = j + 1) begin:sbox_layer
             skinny_sbox8_logic sboxi (.so(sb[i][8*j+7:8*j]),
-                                .si(mxc[i-1][8*j+7:8*j]));
+                                      .si(mxc[i-1][8*j+7:8*j]));
          end
 
          // Add Tweakey
@@ -201,11 +201,11 @@ module tweak2_expansion (/*AUTOARG*/
 endmodule // tweak2_expansion
 
 module tweak1_expansion (/*AUTOARG*/
-   // Outputs
-   ko,
-   // Inputs
-   ki
-   ) ;
+                         // Outputs
+                         ko,
+                         // Inputs
+                         ki
+                         ) ;
    parameter fullcnt = 0;
 
    output [63+64*fullcnt:0] ko;
