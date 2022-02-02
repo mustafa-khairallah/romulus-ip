@@ -28,7 +28,7 @@ module skinny_rnd (/*AUTOARG*/
 
    generate
       for (j = 0; j < 16; j = j + 1) begin:sbox_round0
-         skinny_sbox8 sbox0 (.so(sb[0][8*j+7:8*j]),
+         skinny_sbox8_logic sbox0 (.so(sb[0][8*j+7:8*j]),
                              .si(roundstate[8*j+7:8*j]));
       end
    endgenerate
