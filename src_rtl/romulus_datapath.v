@@ -92,7 +92,7 @@ module romulus_datapath (/*AUTOARG*/
       end
    endgenerate
 
-   lfsr_counter #(.fullcnt(fullcnt)) CNT (.so(tk3),si(cin),.domain(domain));
+   lfsr_counter #(.fullcnt(fullcnt)) CNT (.so(tk3),.si(cin),.domain(domain));
    lfsr2_correct LFSR3 (.so(tk1), .si(tka));
    lfsr3_correct LFSR2 (.so(tk2), .si(tkb));
 
@@ -119,7 +119,7 @@ module state_update (/*AUTOARG*/
    // Inputs
    decrypt, pdi, state_i, clk, rst, en, tbc
    ) ;
-   parameter buswidth;
+   parameter buswidth = 128;
 
    output [buswidth-1:0] pdo;
    output [127:0]        state_o;
