@@ -94,20 +94,20 @@ module skinny_rnd (/*AUTOARG*/
             assign rkey[i] = {rndkey[i][127:64],64'h0} ^
                              {rndtweak[i][127:64],64'h0} ^
                              {rndcnt[i][127:64],64'h0}^
-		                         {4'h0,rndcoonstant[i][3:0],24'h0,6'h0,rndcoonstant[i][5:4],24'h0,8'h02,56'h0};
+		                         {4'h0,rndconstant[i][3:0],24'h0,6'h0,rndconstant[i][5:4],24'h0,8'h02,56'h0};
          end
          else if (i%2 == 0) begin: even_round_keys
             tweak1_expansion #(.fullcnt(fullcnt)) tk1 (.ko(rndcnt[i+2]),.ki(rndcnt[i]));
             assign rkey[i] = {rndkey[i][127:64],64'h0} ^
                              {rndtweak[i][127:64],64'h0} ^
                              {rndcnt[i][127:64],64'h0}^
-		                         {4'h0,rndcoonstant[i][3:0],24'h0,6'h0,rndcoonstant[i][5:4],24'h0,8'h02,56'h0};
+		                         {4'h0,rndconstant[i][3:0],24'h0,6'h0,rndconstant[i][5:4],24'h0,8'h02,56'h0};
          end
          else begin: odd_round_keys
             assign rndcnt[i] = 64'h0;
             assign rkey[i] = {rndkey[i][127:64],64'h0} ^
                              {rndtweak[i][127:64],64'h0} ^
-		                         {4'h0,rndcoonstant[i][3:0],24'h0,6'h0,rndcoonstant[i][5:4],24'h0,8'h02,56'h0};
+		                         {4'h0,rndconstant[i][3:0],24'h0,6'h0,rndconstant[i][5:4],24'h0,8'h02,56'h0};
          end
       end
    endgenerate
