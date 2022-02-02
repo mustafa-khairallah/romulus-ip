@@ -51,28 +51,24 @@ module skinny_rnd (/*AUTOARG*/
    generate
       for (i = 1; i < numrnd; i = i + 1) begin:unrolled_rounds
          for (j = 0; j < 16; j = j + 1) begin:sbox_layer
-            generate
-               for (j = 0; j < 16; j = j + 1) begin:sbox_round0
-                  skinny_sbox8 sboxi (.so(sb[i][8*j+7:8*j]),
-                                      .si(mxc[i-1][8*j+7:8*j]));
-               end
-            endgenerate
-
-            // Add Tweakey
-            assign atk[i] = rkey[i] ^ sb[i];
-
-            // ShiftRows
-            assign shr[i][127:96] =  atk[i][127:96];
-            assign shr[i][ 95:64] = {atk[i][ 71:64],atk[i][95:72]};
-            assign shr[i][ 63:32] = {atk[i][ 47:32],atk[i][63:48]};
-            assign shr[i][ 31: 0] = {atk[i][ 23: 0],atk[i][31:24]};
-
-            // MixColumn
-            assign mxc[i][ 95:64] = shr[i][127:96];
-            assign mxc[i][ 63:32] = shr[i][ 95:64] ^ shr[i][63:32];
-            assign mxc[i][ 31: 0] = shr[i][127:96] ^ shr[i][63:32];
-            assign mxc[i][127:96] = shr[i][ 31: 0] ^ mxc[i][31: 0];
+            skinny_sbox8 sboxi (.so(sb[i][8*j+7:8*j]),
+                                .si(mxc[i-1][8*j+7:8*j]));
          end
+
+         // Add Tweakey
+         assign atk[i] = rkey[i] ^ sb[i];
+
+         // ShiftRows
+         assign shr[i][127:96] =  atk[i][127:96];
+         assign shr[i][ 95:64] = {atk[i][ 71:64],atk[i][95:72]};
+         assign shr[i][ 63:32] = {atk[i][ 47:32],atk[i][63:48]};
+         assign shr[i][ 31: 0] = {atk[i][ 23: 0],atk[i][31:24]};
+
+         // MixColumn
+         assign mxc[i][ 95:64] = shr[i][127:96];
+         assign mxc[i][ 63:32] = shr[i][ 95:64] ^ shr[i][63:32];
+         assign mxc[i][ 31: 0] = shr[i][127:96] ^ shr[i][63:32];
+         assign mxc[i][127:96] = shr[i][ 31: 0] ^ mxc[i][31: 0];
       end
    endgenerate
 
