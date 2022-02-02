@@ -4,7 +4,7 @@ module skinny_rnd (/*AUTOARG*/
    // Inputs
    roundkey, roundtweak, roundstate, roundcnt, constant
    ) ;
-   parameter numrnd = 5;
+   parameter numrnd = 8;
    parameter fullcnt = 1;
 
    output [63+64*fullcnt:0] nextcnt;
