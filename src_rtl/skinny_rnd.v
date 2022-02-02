@@ -51,7 +51,7 @@ module skinny_rnd (/*AUTOARG*/
    generate
       for (i = 1; i < numrnd; i = i + 1) begin:unrolled_rounds
          for (j = 0; j < 16; j = j + 1) begin:sbox_layer
-            skinny_sbox8 sboxi (.so(sb[i][8*j+7:8*j]),
+            skinny_sbox8_logic sboxi (.so(sb[i][8*j+7:8*j]),
                                 .si(mxc[i-1][8*j+7:8*j]));
          end
 
