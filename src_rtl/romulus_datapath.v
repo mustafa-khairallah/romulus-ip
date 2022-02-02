@@ -32,13 +32,13 @@ module romulus_datapath (/*AUTOARG*/
    wire [127:0]              tbcstate;
    wire [127:0]              tkxtbc, tkxcorrect;
    wire [127:0]              tkytbc, tkycorrect;
-   wire [63+64*fullcnt:0]    tkztbc, tkzcorrect, domainseperator;
+   wire [63+64*fullcnt:0]    tkztbc, tkzcorrect, domainseparator;
    wire [127:0]              tka, tkb;
    wire [63+64*fullcnt:0]    tkc;
    wire [127:0]              tk1, tk2;
    wire [63+64*fullcnt:0]    tk3, cin;
 
-   assign counter = domainseparator [63+64*fullcnt:8+64*fullcnt];
+   assign counter = domainseparator[63+64*fullcnt:8+64*fullcnt];
    assign cin = correct_cnt ? domainseparator[63+64*fullcnt:8+64*fullcnt] : tkc[63+64*fullcnt:8+64*fullcnt];
 
    state_update #(.buswidth(buswidth)) STATE (.pdo(pdo),
@@ -85,10 +85,10 @@ module romulus_datapath (/*AUTOARG*/
    correctfullperm PERMB (.tko(tkb),.tki(tweak));
    generate
       if (fullcnt) begin: cnt_correction
-         correctfullperm PERMC (.tko(tkc),.tki(domainseperator));
+         correctfullperm PERMC (.tko(tkc),.tki(domainseparator));
       end
       else begin
-         correcthalfperm PERMC (.tko(tkc),.tki(domainseperator));
+         correcthalfperm PERMC (.tko(tkc),.tki(domainseparator));
       end
    endgenerate
 
