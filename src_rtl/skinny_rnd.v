@@ -16,13 +16,13 @@ module skinny_rnd (/*AUTOARG*/
    genvar    i, j;
 
    wire [63+64*fullcnt:0] rndcnt [numrnd:0];
-   wire [127:0] sb [numrnd-1:0];
-   wire [127:0] rkey [numrnd-1:0];
-   wire [127:0] atk [numrnd-1:0];
-   wire [127:0] shrow [numrnd-1:0];
-   wire [127:0] mxc [numrnd-1:0];
-   wire [127:0] rndkey [numrnd:0];
-   wire [127:0] rndtweak [numrnd:0];
+   wire [127:0] sb [0:numrnd-1];
+   wire [127:0] rkey [0:numrnd-1];
+   wire [127:0] atk [0:numrnd-1];
+   wire [127:0] shrow [0:numrnd-1];
+   wire [127:0] mxc [0:numrnd-1];
+   wire [127:0] rndkey [0:numrnd];
+   wire [127:0] rndtweak [0:numrnd];
 
    wire [5:0]   rndconstant [numrnd-1:0];
 
