@@ -15,106 +15,106 @@ module skinny_rnd (/*AUTOARG*/
 
    genvar    i, j;
 
-   wire [63+64*fullcnt:0] rndcnt [numrnd:0];
-   wire [127:0] sb [0:numrnd-1];
-   wire [127:0] rkey [0:numrnd-1];
-   wire [127:0] atk [0:numrnd-1];
-   wire [127:0] shrow [0:numrnd-1];
-   wire [127:0] mxc [0:numrnd-1];
-   wire [127:0] rndkey [0:numrnd];
-   wire [127:0] rndtweak [0:numrnd];
+   wire [(64+64*fullcnt)*(numrnd+1)-1:0] rndcnt;
 
-   wire [5:0]   rndconstant [numrnd-1:0];
+   wire [128*numrnd-1:0] sb_flat;
+   wire [128*numrnd-1:0] rkey_flat;
+   wire [128*numrnd-1:0] atk_flat;
+   wire [128*numrnd-1:0] mxc_flat;
+   wire [128*(numrnd+1)-1:0] rndkey_flat;
+   wire [128*(numrnd+1)-1:0] rndtweak_flat;
+
+   wire [6*numrnd-1:0]   rndconstant;
 
    generate
       for (j = 0; j < 16; j = j + 1) begin:sbox_round0
-         skinny_sbox8 sbox0 (.so(sb[0][8*j+7:8*j]),
+         skinny_sbox8 sbox0 (.so(sb_flat[8*j+7:8*j]),
                              .si(roundstate[8*j+7:8*j]));
       end
    endgenerate
 
    // Add Tweakey
-   assign atk[0] = rkey[0] ^ sb[0];
+   assign atk_flat[127:0] = rkey_flat[127:0] ^ sb_flat[127:0];
 
    // ShiftRows
-   assign shr[0][127:96] =  atk[0][127:96];
-   assign shr[0][ 95:64] = {atk[0][ 71:64],atk[0][95:72]};
-   assign shr[0][ 63:32] = {atk[0][ 47:32],atk[0][63:48]};
-   assign shr[0][ 31: 0] = {atk[0][ 23: 0],atk[0][31:24]};
+   assign shr_flat[127:96] =  atk_flat[127:96];
+   assign shr_flat[ 95:64] = {atk_flat[ 71:64],atk_flat[95:72]};
+   assign shr_flat[ 63:32] = {atk_flat[ 47:32],atk_flat[63:48]};
+   assign shr_flat[ 31: 0] = {atk_flat[ 23: 0],atk_flat[31:24]};
 
    // MixColumn
-   assign mxc[0][ 95:64] = shr[0][127:96];
-   assign mxc[0][ 63:32] = shr[0][ 95:64] ^ shr[0][63:32];
-   assign mxc[0][ 31: 0] = shr[0][127:96] ^ shr[0][63:32];
-   assign mxc[0][127:96] = shr[0][ 31: 0] ^ mxc[0][31: 0];
+   assign mxc_flat[ 95:64] = shr_flat[127:96];
+   assign mxc_flat[ 63:32] = shr_flat[ 95:64] ^ shr_flat[63:32];
+   assign mxc_flat[ 31: 0] = shr_flat[127:96] ^ shr_flat[63:32];
+   assign mxc_flat[127:96] = shr_flat[ 31: 0] ^ mxc_flat[31: 0];
 
    generate
       for (i = 1; i < numrnd; i = i + 1) begin:unrolled_rounds
          for (j = 0; j < 16; j = j + 1) begin:sbox_layer
-            skinny_sbox8 sboxi (.so(sb[i][8*j+7:8*j]),
-                                .si(mxc[i-1][8*j+7:8*j]));
+            skinny_sbox8 sboxi (.so(sb_flat[128*i+8*j+7:128*i+8*j]),
+                                .si(mxc_flat[128*(i-1)+8*j+7:128*(i-1)*8*j]));
          end
 
          // Add Tweakey
-         assign atk[i] = rkey[i] ^ sb[i];
+         assign atk_flat[128*i+127:128*i] = rkey_flat[128*i+127:128*i] ^ sb_flat[128*i+127:128*i];
 
          // ShiftRows
-         assign shr[i][127:96] =  atk[i][127:96];
-         assign shr[i][ 95:64] = {atk[i][ 71:64],atk[i][95:72]};
-         assign shr[i][ 63:32] = {atk[i][ 47:32],atk[i][63:48]};
-         assign shr[i][ 31: 0] = {atk[i][ 23: 0],atk[i][31:24]};
+         assign shr_flat[127+128*i:96+128*i] =  atk_flat[127+128*i:96+128*i];
+         assign shr_flat[ 95+128*i:64+128*i] = {atk_flat[ 71+128*i:64+128*i],atk_flat[95+128*i:72+128*i]};
+         assign shr_flat[ 63+128*i:32+128*i] = {atk_flat[ 47+128*i:32+128*i],atk_flat[63+128*i:48+128*i]};
+         assign shr_flat[ 31+128*i: 0+128*i] = {atk_flat[ 23+128*i: 0+128*i],atk_flat[31+128*i:24+128*i]};
 
          // MixColumn
-         assign mxc[i][ 95:64] = shr[i][127:96];
-         assign mxc[i][ 63:32] = shr[i][ 95:64] ^ shr[i][63:32];
-         assign mxc[i][ 31: 0] = shr[i][127:96] ^ shr[i][63:32];
-         assign mxc[i][127:96] = shr[i][ 31: 0] ^ mxc[i][31: 0];
+         assign mxc_flat[ 95+128*i:64+128*i] = shr_flat[127+128*i:96+128*i];
+				 assign mxc_flat[ 63+128*i:32+128*i] = shr_flat[ 95+128*i:64+128*i] ^ shr_flat[63+128*i:32+128*i];
+				 assign mxc_flat[ 31+128*i: 0+128*i] = shr_flat[127+128*i:96+128*i] ^ shr_flat[63+128*i:32+128*i];
+				 assign mxc_flat[127+128*i:96+128*i] = shr_flat[ 31+128*i: 0+128*i] ^ mxc_flat[31+128*i: 0+128*i];
       end
    endgenerate
 
-   assign nextstate = mxc[numrnd-1];
+   assign nextstate = mxc_flat[128*(numrnd-1)+127:128*(numrnd-1)];
 
-   assign rndkey[0] = roundkey;
-   assign rndtweak[0] = roundtweak;
-   assign rndcnt[0] = roundcnt;
+   assign rndkey[127:0] = roundkey;
+   assign rndtweak[127:0] = roundtweak;
+   assign rndcnt[127:0] = roundcnt;
 
    generate
       for (i = 0; i < numrnd; i = i + 1) begin:round_constant
-         assign rndconstant[i] = constant[5+6*i:0+6*i];
+         assign rndconstant[5+6*i:0+6*i] = constant[5+6*i:0+6*i];
       end
    endgenerate
 
    generate
       for (i = 0; i < numrnd; i = i + 1) begin:keyexpansion
-         key_expansion tk3 (.ko(rndkey[i+1]),.ki(rndkey[i]));
-         tweak2_expansion tk2 (.ko(rndtweak[i+1]),.ki(rndtweak[i]));
+         key_expansion tk3 (.ko(rndkey[127+128*(i+1):128*(i+1)]),.ki(rndkey[127+128*i:128*i]));
+         tweak2_expansion tk2 (.ko(rndtweak[127+128*(i+1):128*(i+1)]),.ki(rndtweak[127+128*i:128*i]));
 
          if (fullcnt) begin: round_keys
-            tweak1_expansion #(.fullcnt(fullcnt)) tk1 (.ko(rndcnt[i+1]),.ki(rndcnt[i]));
-            assign rkey[i] = {rndkey[i][127:64],64'h0} ^
-                             {rndtweak[i][127:64],64'h0} ^
-                             {rndcnt[i][127:64],64'h0}^
-		                         {4'h0,rndcoonstant[i][3:0],24'h0,6'h0,rndcoonstant[i][5:4],24'h0,8'h02,56'h0};
+            tweak1_expansion #(.fullcnt(fullcnt)) tk1 (.ko(rndcnt[127+128*(i+1):128*(i+1)]),.ki(rndcnt[127+128*i:128*i]));
+            assign rkey[127+128*i:128*i] = {rndkey[127+128*i:64+128*i],64'h0} ^
+                                           {rndtweak[127+128*i:64+128*i],64'h0} ^
+                                           {rndcnt[127+128*i:64+128*i],64'h0}^
+		                                       {4'h0,rndconstant[3+6*i:6*i],24'h0,6'h0,rndcoonstant[5+6*i:4+6*i],24'h0,8'h02,56'h0};
          end
          else if (i%2 == 0) begin: even_round_keys
-            tweak1_expansion #(.fullcnt(fullcnt)) tk1 (.ko(rndcnt[i+2]),.ki(rndcnt[i]));
-            assign rkey[i] = {rndkey[i][127:64],64'h0} ^
-                             {rndtweak[i][127:64],64'h0} ^
-                             {rndcnt[i][127:64],64'h0}^
-		                         {4'h0,rndcoonstant[i][3:0],24'h0,6'h0,rndcoonstant[i][5:4],24'h0,8'h02,56'h0};
+            tweak1_expansion #(.fullcnt(fullcnt)) tk1 (.ko(rndcnt[63+64*(i+2):64*(i+2)]),.ki(rndcnt[63+64*i:64*i]));
+            assign rkey[127+128*i:128*i] = {rndkey[i][127:64],64'h0} ^
+                                            {rndtweak[i][127:64],64'h0} ^
+                                            {rndcnt[i][127:64],64'h0}^
+		                                        {4'h0,rndconstant[3+6*i:6*i],24'h0,6'h0,rndcoonstant[5+6*i:4+6*i],24'h0,8'h02,56'h0};
          end
          else begin: odd_round_keys
-            assign rndcnt[i] = 64'h0;
-            assign rkey[i] = {rndkey[i][127:64],64'h0} ^
-                             {rndtweak[i][127:64],64'h0} ^
-		                         {4'h0,rndcoonstant[i][3:0],24'h0,6'h0,rndcoonstant[i][5:4],24'h0,8'h02,56'h0};
+            assign rndcnt[63+64*i:64*i] = 64'h0;
+            assign rkey[127+128*i:128*i] = {rndkey[127+128*i:64+128*i],64'h0} ^
+                                           {rndtweak[127+128*i:64+128*i],64'h0} ^
+		                                       {4'h0,rndconstant[3+6*i:6*i],24'h0,6'h0,rndcoonstant[5+6*i:4+6*i],24'h0,8'h02,56'h0};
          end
       end
    endgenerate
 
-   assign nextkey = rndkey[numrnd];
-   assign nexttweak = rndtweak[numrnd];
-   assign nextcnt = rndcnt[numrnd];
+   assign nextkey = rndkey[127+128*numrnd:128*numrnd];
+   assign nexttweak = rndtweak[127+128*numrnd:128*numrnd];
+   assign nextcnt = rndcnt[127+128*numrnd:128*numrnd];
 
 endmodule // skinny_rnd
 
