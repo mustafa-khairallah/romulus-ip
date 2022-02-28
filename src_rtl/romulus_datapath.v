@@ -239,12 +239,12 @@ module tkz_update (/*AUTOARG*/
    generate
    always @ (posedge clk) begin
       if (rst) begin
-              if (fullcnt == 1) begin:initial_counter_state
-              state <= 128'h01000000000000000000000000000000;
-           end
-           else begin
-              state <= 64'h0100000000000000;
-           end
+         if (fullcnt == 1) begin:initial_counter_state
+            state <= 128'h01000000000000000000000000000000;
+         end
+         else begin
+            state <= 64'h0100000000000000;
+         end
       end
       else if (en) begin
          if (tbc) begin
