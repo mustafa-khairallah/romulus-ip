@@ -5,8 +5,10 @@ parameter neg_rst = 1;
 
 // Bus related parameters
 parameter BUSW = 32;
-parameter PBUSC = 8'h07; // value of cnt at the end of the pdi input block
-parameter SBUSC = 8'h07; // value of cnt at the end of the sdi input block
+parameter BUSSHIFT = 2; // multiply the bus counter by 2^BUSSHIFT
+parameter PBUSC = 8'h03; // value of cnt at the end of the pdi input block when loaded into S
+parameter TBUSC = 8'h03; // value of cnt at the end of the pdi input block when loaded into T
+parameter SBUSC = 8'h03; // value of cnt at the end of the sdi input block
 parameter BBUSC = 8'h00; // Base counter value
 
 // TBC related parameters
@@ -14,14 +16,14 @@ parameter BBUSC = 8'h00; // Base counter value
 parameter DUMMY        = 7'h00; // Implementation of the modes without TBC
 parameter SKINNY       = 7'h01;
 parameter DEOXYS       = 7'h02;
-parameter TBC          = DUMMY;
-parameter FINCONST     = 7'h02; // Indicates when the last round is reached
+parameter TBC          = SKINNY;
+parameter FINCONST     = 7'h00; // Indicates when the last round is reached
 parameter CNTW         = 6; // The width of the constants counter
-parameter RNDS_PER_CLK = 1;
+parameter RNDS_PER_CLK = 40;
 parameter fullcnt = 1;
 parameter CLKS_PER_RND = 1; // 1 for unrolled rounds 2
 parameter STATESHARES  = 1; // Number of ptext/ctext shares
-parameter KEYSHARES    = 2; // Number of key shares
+parameter KEYSHARES    = 1; // Number of key shares
 
 // BLK COUNTER INITIAL CONSTANT
 parameter INITCTR1 = 56'h02000000000000;
@@ -59,3 +61,17 @@ parameter KEY = 12;
 parameter Npub = 13;
 parameter Nsec = 14;
 parameter ENCNsec = 15;
+
+// DOMAINS
+parameter nadnormal = 8;
+parameter adfinal = 24;
+parameter adpadded = 26;
+parameter nmsgnormal = 4;
+parameter msgfinal = 20;
+parameter msgpadded = 21;
+
+parameter madnormal = 40;
+parameter macnormal = 44;
+parameter macfinal = 48;
+parameter mmsgnormal = 36;
+
