@@ -26,16 +26,15 @@ module deoxys_rnd (/*AUTOARG*/
    wire [127:0]             rndkey [0:numrnd];
    wire [127:0]             rndtweak [0:numrnd];
 
-   wire [5:0]               rndconstant [numrnd-1:0];
+   wire [5:0]               rndconstant [numrnd:0];
 
    assign atk[0] = rkey[0] ^ roundstate;
-
+   
    generate
       for (i = 0; i < numrnd; i = i + 1) begin:unrolled_rounds
          // Substitution
          for (j = 0; j < 16; j = j + 1) begin:sbox_layer
-            bSbox sboxi (.Q(sb[i][8*j+7:8*j]),
-                         .encrypt(1),
+            S sboxi (.Q(sb[i][8*j+7:8*j]),
                          .A(atk[i][8*j+7:8*j]));
          end
 
@@ -77,13 +76,14 @@ module deoxys_rnd (/*AUTOARG*/
                                  x2[i][31:0];
 
          if (i < (numrnd-1)) begin:second_atk
-            assign atk[i+1] = rkey[i] ^ mxc[i];
+            assign atk[i+1] = rkey[i+1] ^ mxc[i];
          end
       end // block: unrolled_rounds
 
-      assign nextstate = (constant[8*numrnd-1:8*numrnd-8] == 8'h39) ?
-                         mxc[numrnd-1] ^ rkey[numrnd] : mxc[numrnd-1];
-
+      //assign nextstate = (constant[8*numrnd-1:8*numrnd-8] == 8'h39) ?
+        //                 mxc[numrnd-1] ^ rkey[numrnd] : mxc[numrnd-1];
+      assign nextstate = mxc[numrnd-1] ^ rkey[numrnd];
+      
    endgenerate
 
    generate
@@ -105,8 +105,19 @@ module deoxys_rnd (/*AUTOARG*/
                             8'h08,rndconstant[i],16'h0000
                            };
 
-      end
+      end // block: keyexpansion
+      assign rkey[numrnd] = rndkey[numrnd] ^ rndcnt[numrnd] ^ rndtweak[numrnd] ^
+		                           {8'h01,8'h72,16'h0000,
+					    8'h02,8'h72,16'h0000,
+					    8'h04,8'h72,16'h0000,
+					    8'h08,8'h72,16'h0000
+					    };
+      
    endgenerate
+
+   assign rndkey[0] = roundkey;
+   assign rndtweak[0] = roundtweak;
+   assign rndcnt[0] = roundcnt;
 
    assign nextkey = rndkey[numrnd];
    assign nexttweak = rndtweak[numrnd];
@@ -516,264 +527,262 @@ module key_expansion (/*AUTOARG*/
 
 endmodule // key_expansion
 
-/* square in GF(2^2), using normal basis [Omega^2,Omega]
- * inverse is the same as square in GF(2^2), using any normal basis
- */
-module GF_SQ_2 ( A, Q );
-  input [1:0] A;
-  output [1:0] Q;
-
-  assign Q = { A[0], A[1] };
-endmodule
-
-/* scale by w = Omega in GF(2^2), using normal basis [Omega^2,Omega] */
-module GF_SCLW_2 ( A, Q );
-  input [1:0] A;
-  output [1:0] Q;
-  assign Q = { (A[1] ^ A[0]), A[1] };
-endmodule
-
-/* scale by w^2 = Omega^2 in GF(2^2), using normal basis [Omega^2,Omega] */
-module GF_SCLW2_2 ( A, Q );
-  input [1:0] A;
-  output [1:0] Q;
-  assign Q = { A[0], (A[1] ^ A[0]) };
-endmodule
-
-/* multiply in GF(2^2), shared factors, module GF_MULS_2 ( A, ab, B, cd, Q );
-using normal basis [Omega^2,Omega] */
-module GF_MULS_2 ( A, ab, B, cd, Q );
-  input [1:0] A;
-  input ab;
-  input [1:0] B;
-  input cd;
-  output [1:0] Q;
-  wire abcd, p, q;
-  assign abcd = ~(ab & cd);  /* note:~& syntax for NAND won’t compile */
-  assign p = (~(A[1] & B[1])) ^ abcd;
-  assign q = (~(A[0] & B[0])) ^ abcd;
-  assign Q = { p, q };
-endmodule
-
-/* multiply & scale by N in GF(2^2), shared factors, basis [Omega^2,Omega] */
-module GF_MULS_SCL_2 ( A, ab, B, cd, Q );
-  input [1:0] A;
-  input ab;
-  input [1:0] B;
-  input cd;
-  output [1:0] Q;
-  wire t, p, q;
-
-  assign t = ~(A[0] & B[0]); /* note: ~& syntax for NAND won’t compile */
-  assign p = (~(ab & cd)) ^ t;
-  assign q = (~(A[1] & B[1])) ^ t;
-  assign Q = { p, q };
-endmodule
-
-module GF_INV_4 ( A, Q );
-  input [3:0] A; output [3:0] Q;
-  wire [1:0] a, b, c,d,p,q;
-  wire sa, sb, sd; /* for shared factors in multipliers */
-
-  assign a = A[3:2]; assign b = A[1:0];
-  assign sa = a[1] ^ a[0];
-  assign sb = b[1] ^ b[0];
-  /* optimize this section as shown below
-    GF_MULS_2 abmul(a, sa, b, sb, ab);
-    GF_SQ_2 absq( (a ^ b), ab2);
-    GF_SCLW2_2 absclN( ab2, ab2N);
-    GF_SQ_2 dinv( (ab ^ ab2N), d);
-  */
-  assign c = { /* note: ~| syntax for NOR won’t compile */
-    ~(a[1] | b[1]) ^ (~(sa &  sb)) ,
-    ~(sa | sb) ^ (~(a[0] & b[0])) };
-  /* end of optimization */
-
-  assign sd = d[1] ^ d[0];
-  GF_MULS_2 pmul(d, sd, b, sb, p);
-  GF_MULS_2 qmul(d, sd, a, sa, q);
-  assign Q = { p, q };
-endmodule
-
-/* square & scale by nu in GF(2^4)/GF(2^2),
- * in the normal basis [alpha^8, alpha^2]:
- *
- * nu = beta^8 = N^2*alpha^2, N = w^2
- */
-module GF_SQ_SCL_4 ( A, Q );
-  input [3:0] A;
-  output [3:0] Q;
-  wire [1:0] a, b, ab2, b2, b2N2;
-  assign a = A[3:2];
-  assign b = A[1:0];
-  GF_SQ_2 absq(a ^ b, ab2);
-  GF_SQ_2 bsq(b, b2);
-  GF_SCLW_2 bmulN2(b2, b2N2);
-
-  assign Q = { ab2, b2N2 };
-endmodule
-
-/* multiply in GF(2^4)/GF(2^2), shared factors, basis [alpha^8, alpha^2] */
-module GF_MULS_4 ( A, a, Al, Ah, aa, B, b, Bl, Bh, bb, Q );
-  input [3:0] A;
-  input [1:0] a;
-  input Al;
-  input Ah;
-  input aa;
-  input [3:0] B;
-  input [1:0] b;
-  input Bl;
-  input Bh;
-  input bb;
-  output [3:0] Q;
-  wire [1:0] ph, pl, ps, p;
-  wire t;
-
-  GF_MULS_2 himul(A[3:2], Ah, B[3:2], Bh, ph);
-  GF_MULS_2 lomul(A[1:0], Al, B[1:0], Bl, pl);
-  GF_MULS_SCL_2 summul( a, aa, b, bb, p);
-  assign Q = { (ph ^ p), (pl ^ p) };
-endmodule
-
-/* inverse in GF(2^8)/GF(2^4), using normal basis [d^16, d] */
-module GF_INV_8 ( A, Q );
-  input [7:0] A;
-  output [7:0] Q;
-  wire [3:0] a, b, c, d, p, q;
-  wire [1:0] sa, sb, sd, t; /* for shared factors in multipliers */
-  wire al, ah, aa, bl, bh, bb, dl, dh, dd; /* for shared factors */
-  wire c1, c2, c3; /* for temp var */
-
-  assign a = A[7:4];
-  assign b = A[3:0];
-  assign sa = a[3:2] ^ a[1:0];
-  assign sb = b[3:2] ^ b[1:0];
-  assign al = a[1] ^ a[0];
-  assign ah = a[3] ^ a[2];
-  assign aa = sa[1] ^ sa[0];
-  assign bl = b[1] ^ b[0];
-  assign bh = b[3] ^ b[2];
-  assign bb = sb[1] ^ sb[0];
-
-  /* optimize this section as shown below
-  GF_MULS_4 abmul(a, sa, al, ah, aa, b, sb, bl, bh, bb, ab);
-  GF_SQ_SCL_4 absq( (a ^ b), ab2);
-  GF_INV_4 dinv( (ab ^ ab2), d);
-  */
-  assign c1 = ~(ah & bh);
-  assign c2 = ~(sa[0] & sb[0]);
-  assign c3 = ~(aa & bb);
-  assign c = {
-    (~(sa[0] | sb[0]) ^ (~(a[3] & b[3]))) ^ c1 ^ c3 ,
-    (~(sa[1] | sb[1]) ^ (~(a[2] & b[2]))) ^ c1 ^ c2 ,
-    (~(al | bl) ^ (~(a[1] & b[1]))) ^ c2 ^ c3 ,
-    (~(a[0] | b[0]) ^ (~(al & bl))) ^ (~(sa[1] & sb[1])) ^ c2
-    };
-  GF_INV_4 dinv( c, d);
-  /* end of optimization */
-  assign sd = d[3:2] ^ d[1:0];
-  assign dl = d[1] ^ d[0];
-  assign dh = d[3] ^ d[2];
-  assign dd = sd[1] ^ sd[0];
-  GF_MULS_4 pmul(d, sd, dl, dh, dd, b, sb, bl, bh, bb, p);
-  GF_MULS_4 qmul(d, sd, dl, dh, dd, a, sa, al, ah, aa, q);
-  assign Q = { p, q };
-endmodule
-
-/* MUX21I is an inverting 2:1 multiplexor */
-module MUX21I ( A, B, s, Q );
-  input A;
-  input B;
-  input s;
-  output Q;
-
-  assign Q = ~( s ? A : B );
-endmodule
-
-/* select and invert (NOT) byte, using MUX21I */
-module SELECT_NOT_8 ( A, B, s, Q );
-  input [7:0] A;
-  input [7:0] B;
-  input s;
-  output [7:0] Q;
-  MUX21I m7(A[7], B[7], s, Q[7]);
-  MUX21I m6(A[6], B[6], s, Q[6]);
-  MUX21I m5(A[5], B[5], s, Q[5]);
-  MUX21I m4(A[4], B[4], s, Q[4]);
-  MUX21I m3(A[3], B[3], s, Q[3]);
-  MUX21I m2(A[2], B[2], s, Q[2]);
-  MUX21I m1(A[1], B[1], s, Q[1]);
-  MUX21I m0(A[0], B[0], s, Q[0]);
-endmodule
+module S(
+	     input [7:0] A,
+	     output [7:0] Q
+	 );
 
 
-/* find either Sbox or its inverse in GF(2^8), by Canright Algorithm */
-module bSbox ( A, encrypt, Q );
-  input [7:0] A;
-  input encrypt; /* 1 for Sbox, 0 for inverse Sbox */
-  output [7:0] Q;
-  wire [7:0] B, C, D, X, Y, Z;
-  wire R1, R2, R3, R4, R5, R6, R7, R8, R9;
-  wire T1, T2, T3, T4, T5, T6, T7, T8, T9, T10;
+   wire [0:7] 		      s, x;
 
-  /* change basis from GF(2^8)
-  /* combine with bit inverse matrix multiply of Sbox */
-  assign R1 = A[7] ^ A[5] ;
-  assign R2 = A[7] ~^ A[4] ;
-  assign R3 = A[6] ^ A[0] ;
-  assign R4 = A[5] ~^ R3 ;
-  assign R5 = A[4] ^ R4 ;
-  assign R6 = A[3] ^ A[0] ;
-  assign R7 = A[2] ^ R1 ;
-  assign R8 = A[1] ^ R3 ;
-  assign R9 = A[3] ^ R8 ;
-  assign B[7] = R7 ~^ R8 ;
-  assign B[6] = R5 ;
-  assign B[5] = A[1] ^ R4 ;
-  assign B[4] = R1 ~^ R3 ;
-  assign B[3] = A[1]^ R2 ^ R6 ;
-  assign B[2] = ~ A[0] ;
-  assign B[1] = R4 ;
-  assign B[0] = A[2] ~^ R9 ;
-  assign Y[7] = R2 ;
-  assign Y[6] = A[4] ^ R8 ;
 
-  assign Y[5] = A[6] ^ A[4] ;
-  assign Y[4] = R9 ;
-  assign Y[3] = A[6] ~^ R2 ;
-  assign Y[2] = R7 ;
-  assign Y[1] = A[4] ^ R6 ;
-  assign Y[0] = A[1] ^ R5 ;
+   assign x = A;
 
-  SELECT_NOT_8 sel_in( B, Y, encrypt, Z );
-  GF_INV_8 inv( Z, C );
-  /* change basis back from GF(2^8)/GF(2^4)/GF(2^2) to GF(2^8) */
-  assign T1 = C[7] ^ C[3];
-  assign T2 = C[6] ^ C[4];
-  assign T3 = C[6] ^ C[0];
-  assign T4 = C[5] ~^ C[3] ;
-  assign T5 = C[5] ~^ T1 ;
-  assign T6 = C[5] ~^ C[1] ;
-  assign T7 = C[4] ~^ T6 ;
-  assign T8 = C[2] ^ T4 ;
-  assign T9 = C[1] ^ T2 ;
-  assign T10 = T3 ^ T5 ;
-  assign D[7] = T4 ;
-  assign D[6] = T1 ;
-  assign D[5] = T3 ;
-  assign D[4] = T5 ;
-  assign D[3] = T2 ^ T5;
-  assign D[2] = T3 ^ T8;
-  assign D[1] = T7 ;
-  assign D[0] = T9 ;
-  assign X[7] = C[4] ~^ C[1] ;
-  assign X[6] = C[1] ^ T10 ;
-  assign X[5] = C[2] ^ T10 ;
-  assign X[4] = C[6] ~^ C[1] ;
-  assign X[3] = T8 ^ T9 ;
-  assign X[2] = C[7] ~^ T7 ;
-  assign X[1] = T6 ;
-  assign X[0] = ~ C[2] ;
-  SELECT_NOT_8 sel_out( D, X, encrypt, Q );
-endmodule
 
+   
+   assign Q = s;
+
+
+   wire [21:0] 		      y;
+
+   wire [67:0] 		      t;
+
+   wire [17:0] 		      z;
+
+
+   assign y[14] = x[3] ^ x[5];
+
+   assign y[13] = x[0] ^ x[6];
+
+   assign y[9] = x[0] ^ x[3];
+
+   assign y[8] = x[0] ^ x[5];
+
+   assign t[0] = x[1] ^ x[2];
+
+   assign y[1] = t[0] ^ x[7];
+
+   assign y[4] = y[1] ^ x[3];
+
+   assign y[12] = y[13] ^ y[14];
+
+   assign y[2] = y[1] ^ x[0];
+
+   assign y[5] = y[1] ^ x[6];
+
+   assign y[3] = y[5] ^ y[8];
+
+   assign t[1] = x[4] ^ y[12];
+
+   assign y[15] = t[1] ^ x[5];
+
+   assign y[20] = t[1] ^ x[1];
+
+   assign y[6] = y[15] ^ x[7];
+
+   assign y[10] = y[15] ^ t[0];
+
+   assign y[11] = y[20] ^ y[9];
+
+   assign y[7] = x[7] ^ y[11];
+
+   assign y[17] = y[10] ^ y[11];
+
+   assign y[19] = y[10] ^ y[8];
+
+   assign y[16] = t[0] ^ y[11];
+
+   assign y[21] = y[13] ^ y[16];
+
+   assign y[18] = x[0] ^ y[16];
+
+
+   assign t[2] = y[12] & y[15];
+
+   assign t[3] = y[3] & y[6];
+
+   assign t[4] = t[3] ^ t[2];
+
+   assign t[5] = y[4] & x[7];
+
+   assign t[6] = t[5] ^ t[2];
+
+   assign t[7] = y[13] & y[16];
+
+   assign t[8] = y[5] & y[1];
+
+   assign t[9] = t[8] ^ t[7];
+
+   assign t[10] = y[2] & y[7];
+
+   assign t[11] = t[10] ^ t[7];
+
+   assign t[12] = y[9] & y[11];
+
+   assign t[13] = y[14] & y[17];
+
+   assign t[14] = t[13] ^ t[12];
+
+   assign t[15] = y[8] & y[10];
+
+   assign t[16] = t[15] ^ t[12];
+
+   assign t[17] = t[4] ^ t[14];
+
+   assign t[18] = t[6] ^ t[16];
+
+   assign t[19] = t[9] ^ t[14];
+
+   assign t[20] = t[11] ^ t[16];
+
+   assign t[21] = t[17] ^ y[20];
+
+   assign t[22] = t[18] ^ y[19];
+
+   assign t[23] = t[19] ^ y[21];
+
+   assign t[24] = t[20] ^ y[18];
+
+
+   assign t[25] = t[21] ^ t[22];
+
+   assign t[26] = t[21] & t[23];
+
+   assign t[27] = t[24] ^ t[26];
+
+   assign t[28] = t[25] & t[27];
+
+   assign t[29] = t[28] ^ t[22];
+
+   assign t[30] = t[23] ^ t[24];
+
+   assign t[31] = t[22] ^ t[26];
+
+   assign t[32] = t[31] & t[30];
+
+   assign t[33] = t[32] ^ t[24];
+
+   assign t[34] = t[23] ^ t[33];
+
+   assign t[35] = t[27] ^ t[33];
+
+   assign t[36] = t[24] & t[35];
+
+   assign t[37] = t[36] ^ t[34];
+
+   assign t[38] = t[27] ^ t[36];
+
+   assign t[39] = t[29] & t[38];
+
+   assign t[40] = t[25] ^ t[39];
+
+
+   assign t[41] = t[40] ^ t[37];
+
+   assign t[42] = t[29] ^ t[33];
+
+   assign t[43] =  t[29] ^ t[40];
+
+   assign t[44] =  t[33] ^ t[37];
+
+   assign t[45] = t[42] ^ t[41];
+
+   assign z[0] = t[44] & y[15];
+
+   assign z[1] = t[37] & y[6];
+
+   assign z[2] = t[33] & x[7];
+
+   assign z[3] = t[43] & y[16];
+
+   assign z[4] = t[40] & y[1];
+
+   assign z[5] = t[29] & y[7];
+
+   assign z[6] = t[42] & y[11];
+
+   assign z[7] = t[45] & y[17];
+
+   assign z[8] = t[41] & y[10];
+
+   assign z[9] = t[44] & y[12];
+
+   assign z[10] = t[37] & y[3];
+
+   assign z[11] = t[33] & y[4];
+
+   assign z[12] = t[43] & y[13];
+
+   assign z[13] = t[40] & y[5];
+
+   assign z[14] = t[29] & y[2];
+
+   assign z[15] = t[42] & y[9];
+
+   assign z[16] = t[45] & y[14];
+
+   assign z[17] = t[41] & y[8];
+
+
+   assign t[46] = z[15] ^ z[16];
+
+   assign t[47] = z[10] ^ z[11];
+
+   assign t[48] = z[5] ^ z[13];
+
+   assign t[49] = z[9] ^ z[10];
+
+   assign t[50] = z[2] ^ z[12];
+
+   assign t[51] = z[2] ^ z[5];
+
+   assign t[52] = z[7] ^ z[8];
+
+   assign t[53] = z[0] ^ z[3];
+
+   assign t[54] = z[6] ^ z[7];
+
+   assign t[55] = z[16] ^ z[17];
+
+   assign t[56] = z[12] ^ t[48];
+
+   assign t[57] = t[50] ^ t[53];
+
+   assign t[58] = z[4] ^ t[46];
+
+   assign t[59] = z[3] ^ t[54];
+
+   assign t[60] = t[46] ^ t[57];
+
+   assign t[61] = z[14] ^ t[57];
+
+   assign t[62] = t[52] ^ t[58];
+
+   assign t[63] = t[49] ^ t[58];
+
+   assign t[64] = z[4] ^ t[59];
+
+   assign t[65] = t[61] ^ t[62];
+
+   assign t[66] = z[1] ^ t[63];
+
+   assign s[0] = t[59] ^ t[63];
+
+   assign s[6] = ~t[56 ] ^ t[62];
+
+   assign s[7] = ~t[48 ] ^ t[60];
+
+   assign t[67] = t[64] ^ t[65];
+
+   assign s[3] = t[53] ^ t[66];
+
+   assign s[4] = t[51] ^ t[66];
+
+   assign s[5] = t[47] ^ t[65];
+
+   assign s[1] = ~t[64 ] ^ s[3];
+
+   assign s[2] = ~t[55 ] ^ t[67];
+
+
+endmodule // S

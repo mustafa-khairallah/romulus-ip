@@ -25,7 +25,13 @@ module romulus_datapath (/*AUTOARG*/
    input                  correct_cnt;
    input                  iv;
 
-   wire [127:0]           state;
+   wire [128*STATESHARES-1:0] state_pg;
+   wire [128*KEYSHARES-1:0]   key_pg;
+   wire [127:0] 	      tweak_pg;
+   wire [127:0] 	      domain_separator_pg;
+   wire [CNTW*RNDS_PER_CLK-1:0] constant_pg;
+ 
+   wire [128*STATESHARES-1:0]           state;
    wire [128*KEYSHARES-1:0] key;
    wire [127:0]             tweak;
    wire [127:0]             tbcstate;
@@ -85,11 +91,11 @@ module romulus_datapath (/*AUTOARG*/
                                     .nextkey(tkxtbc),
                                     .nexttweak(tkytbc),
                                     .nextstate(tbcstate),
-                                    .roundkey(key),
-                                    .roundtweak(tweak),
-                                    .roundcnt(domainseparator),
-                                    .roundstate(state),
-                                    .constant(constant)
+                                    .roundkey(key_pg),
+                                    .roundtweak(tweak_pg),
+                                    .roundcnt(domainseparator_pg),
+                                    .roundstate(state_pg),
+                                    .constant(constant_pg)
                                     );
 
          dummy_correctfullperm PERMA (.tko(tka),.tki(key));
@@ -100,15 +106,16 @@ module romulus_datapath (/*AUTOARG*/
          dummy_lfsr3_correct LFSR2 (.so(tk2), .si(tkb));
       end // if (TBC == DUMMY)
       else if (TBC == SKINNY) begin
+	 
          skinny_rnd #(.numrnd(RNDS_PER_CLK)) tweakablecipher (.nextcnt(tkztbc),
                                                               .nextkey(tkxtbc),
                                                               .nexttweak(tkytbc),
                                                               .nextstate(tbcstate),
-                                                              .roundkey(key),
-                                                              .roundtweak(tweak),
-                                                              .roundcnt(domainseparator),
-                                                              .roundstate(state),
-                                                              .constant(constant)
+                                                              .roundkey(key_pg),
+                                                              .roundtweak(tweak_pg),
+                                                              .roundcnt(domainseparator_pg),
+                                                              .roundstate(state_pg),
+                                                              .constant(constant_pg)
                                                               );
 
          skinny_correctfullperm PERMA (.tko(tka),.tki(key));
@@ -118,6 +125,21 @@ module romulus_datapath (/*AUTOARG*/
          skinny_lfsr2_20 LFSR3 (.so(tk1), .si(tka));
          skinny_lfsr3_20 LFSR2 (.so(tk2), .si(tkb));
       end // if (TBC == SKINNY)
+
+      if (power_gated == 1) begin
+	 assign constant_pg = senc ? constant : 0;
+	 assign key_pg = senc ? key : 0;
+	 assign tweak_pg = senc ? tweak : 0;
+	 assign state_pg = senc ? state : 0;
+	 assign domainseparator_pg = senc ? domainseparator : 0;
+      end
+      else begin
+	 assign constant_pg = constant;
+	 assign key_pg = key;
+	 assign tweak_pg = tweak;
+	 assign state_pg = state;
+	 assign domainseparator_pg = domainseparator;
+      end
    endgenerate
 
    assign cin = correct_cnt ? domainseparator : tkc;

@@ -208,6 +208,11 @@ module load_key (/*AUTOARG*/ ) ;
 
    // Stimuli
    initial begin
+
+      $dumpfile("loadkey.vcd");
+
+      $dumpvars(0, load_key);
+       
       sdi_rst = 1;
       pdi_rst = 1;
       do_ready = 1;
@@ -218,7 +223,7 @@ module load_key (/*AUTOARG*/ ) ;
       pdi_rst = 0;
       rst = neg_rst;
 
-      #500;
+      #5000;
 
       $finish();
    end

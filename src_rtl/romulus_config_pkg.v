@@ -2,6 +2,7 @@
 
 // RST Polarity
 parameter neg_rst = 1;
+parameter power_gated = 1;
 
 // Bus related parameters
 parameter BUSW = 32;
@@ -17,9 +18,9 @@ parameter DUMMY        = 7'h00; // Implementation of the modes without TBC
 parameter SKINNY       = 7'h01;
 parameter DEOXYS       = 7'h02;
 parameter TBC          = SKINNY;
-parameter FINCONST     = 4; // Indicates when the last round is reached
+parameter FINCONST     = 39; // Indicates when the last round is reached
 parameter CNTW         = 6; // The width of the constants counter
-parameter RNDS_PER_CLK = 8;
+parameter RNDS_PER_CLK = 1;
 parameter fullcnt = 1;
 parameter CLKS_PER_RND = 1; // 1 for unrolled rounds 2
 parameter STATESHARES  = 1; // Number of ptext/ctext shares
