@@ -21,6 +21,7 @@ parameter TBC          = DEOXYS;
 parameter FINCONST     = 15; // Indicates when the last round is reached
 parameter CNTW         = 6; // The width of the constants counter
 parameter RNDS_PER_CLK = 1;
+parameter CONSTW       = 8*(RNDS_PER_CLK);
 parameter fullcnt = 1;
 parameter CLKS_PER_RND = 1; // 1 for unrolled rounds 2
 parameter STATESHARES  = 1; // Number of ptext/ctext shares
