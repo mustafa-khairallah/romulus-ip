@@ -786,3 +786,56 @@ module S(
 
 
 endmodule // S
+
+module deoxys_lfsr2_16 (/*AUTOARG*/
+   // Outputs
+   so,
+   // Inputs
+   si
+   ) ;
+   output [127:0] so;
+   input [127:0]  si;
+
+   wire [127:0]     m [16:0];
+
+   genvar           i, j;
+
+   assign m[0] =si;
+
+   generate
+      for (i = 0; i < 16; i = i + 1) begin:lfsr_outer
+         for (j= 0; j < 16; j = j + 1) begin:lfsr_inner
+            assign m[i+1][7+8*j:8*j] = {m[i][6+8*j:8*j],m[i][7]^m[i][5]};
+         end
+      end
+   endgenerate
+
+   assign so = m[16];
+
+endmodule // deoxys_lfsr2_16
+
+module deoxys_lfsr3_16 (/*AUTOARG*/
+   // Outputs
+   so,
+   // Inputs
+   si
+   ) ;
+   output [127:0] so;
+   input [127:0]  si;
+
+   wire [127:0]   m [16:0];
+
+   genvar         i, j;
+
+   assign m[0] =si;
+
+   generate
+      for (i = 0; i < 16; i = i + 1) begin:lfsr_outer
+         for (j= 0; j < 16; j = j + 1) begin:lfsr_inner
+            assign m[i+1][7+8*j:8*j] = {m[i][6]^m[i][0],m[i][7+8*j:8*j]};
+         end
+      end
+   endgenerate
+
+   assign so = m[16];
+endmodule // deoxys_lfsr3_16

@@ -20,7 +20,14 @@ module LWC (/*AUTOARG*/
    wire            zrst, zenc, zen;
    wire            srst, senc, sen;
 
-   wire [CNTW*RNDS_PER_CLK-1:0] constant;
+   generate
+      if (TBC=Deoxys) begin:deoxys_port
+         wire [8*(RNDS_PER_CLK+1)-1:0] constant_pg;
+      end
+      else begin:constant_port
+         wire [CNTW*RNDS_PER_CLK-1:0] constant_pg;
+      end
+   endgenerate
    wire                         correct_cnt;
    wire                         iv;
 

@@ -10,7 +10,14 @@ module romulus_datapath (/*AUTOARG*/
    output [BUSW-1:0] pdo;
    output [55:0]     counter;
 
-   input [CNTW*RNDS_PER_CLK-1:0]      constant;
+   generate
+      if (TBC=Deoxys) begin:deoxys_port
+         input [8*(RNDS_PER_CLK+1)-1:0] constant;
+      end
+      else begin:constant_port
+         input [CNTW*RNDS_PER_CLK-1:0] constant;
+      end
+   endgenerate
    input [BUSW/8-1:0] decrypt;
    input [BUSW-1:0]   pdi;
    input [BUSW-1:0]   sdi;
@@ -29,8 +36,15 @@ module romulus_datapath (/*AUTOARG*/
    wire [128*KEYSHARES-1:0]   key_pg;
    wire [127:0] 	      tweak_pg;
    wire [127:0] 	      domain_separator_pg;
-   wire [CNTW*RNDS_PER_CLK-1:0] constant_pg;
- 
+   generate
+      if (TBC=Deoxys) begin:deoxys_port
+         wire [8*(RNDS_PER_CLK+1)-1:0] constant_pg;
+      end
+      else begin:constant_port
+         wire [CNTW*RNDS_PER_CLK-1:0] constant_pg;
+      end
+   endgenerate
+
    wire [128*STATESHARES-1:0]           state;
    wire [128*KEYSHARES-1:0] key;
    wire [127:0]             tweak;
@@ -125,6 +139,25 @@ module romulus_datapath (/*AUTOARG*/
          skinny_lfsr2_20 LFSR3 (.so(tk1), .si(tka));
          skinny_lfsr3_20 LFSR2 (.so(tk2), .si(tkb));
       end // if (TBC == SKINNY)
+      else if (TBC == DEOXYS) begin
+         deoxys_rnd #(.numrnd(RNDS_PER_CLK)) tweakablecipher (.nextcnt(tkztbc),
+                                                              .nextkey(tkxtbc),
+                                                              .nexttweak(tkytbc),
+                                                              .nextstate(tbcstate),
+                                                              .roundkey(key_pg),
+                                                              .roundtweak(tweak_pg),
+                                                              .roundcnt(domainseparator_pg),
+                                                              .roundstate(state_pg),
+                                                              .constant(constant_pg)
+                                                              );
+
+         assign tka = key;
+         assign tkb = tweak;
+         assign tkc = domainseparator;
+
+         deoxys_lfsr2_20 LFSR3 (.so(tk1), .si(tka));
+         deoxys_lfsr3_20 LFSR2 (.so(tk2), .si(tkb));
+      end
 
       if (power_gated == 1) begin
 	 assign constant_pg = senc ? constant : 0;

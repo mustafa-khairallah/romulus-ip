@@ -27,7 +27,14 @@ module romulus_multi_dim_api (/*AUTOARG*/
    output reg [3:0]      decrypt;
    output reg [CLKS_PER_RND-1:0] enrnd;
 
-   output [CNTW*RNDS_PER_CLK-1:0] constant;
+   generate
+      if (TBC=Deoxys) begin:deoxys_port
+         output [8*(RNDS_PER_CLK+1)-1:0] constant;
+      end
+      else begin:constant_port
+         output [CNTW*RNDS_PER_CLK-1:0] constant;
+      end
+   endgenerate
 
    input [55:0]                   counter;
    input [BUSW-1:0]      pdi_data;
@@ -72,6 +79,9 @@ module romulus_multi_dim_api (/*AUTOARG*/
       end
       else if (TBC == SKINNY) begin:skinny_cnt
          skinny_constants #(.RNDS_PER_CLK(RNDS_PER_CLK)) constant_gen (.constant(constant),.cnt(cnt));
+      end
+      else if (TBC == DEOXYS) begin:skinny_cnt
+         deoxys_constants #(.RNDS_PER_CLK(RNDS_PER_CLK)) constant_gen (.constant(constant),.cnt(cnt));
       end
    endgenerate
 

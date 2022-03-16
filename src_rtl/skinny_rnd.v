@@ -355,8 +355,8 @@ module skinny_lfsr2_20 (/*AUTOARG*/
    output [127:0] so;
    input [127:0]  si;
 
-   wire [7:0] 	  m [15:0];
-   wire [7:0] 	  z [15:0];
+   wire [7:0]     m [15:0];
+   wire [7:0]     z [15:0];
 
    assign m[0] = si[7:0];
    assign m[1] = si[15:8];
