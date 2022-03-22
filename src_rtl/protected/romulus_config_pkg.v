@@ -2,7 +2,7 @@
 
 // RST Polarity
 parameter neg_rst = 1;
-parameter power_gated = 1;
+parameter power_gated = 0;
 
 // Bus related parameters
 parameter BUSW = 32;

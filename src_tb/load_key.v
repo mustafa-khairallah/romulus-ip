@@ -1,6 +1,6 @@
 module load_key (/*AUTOARG*/ ) ;
 `include "romulus_config_pkg.v"
-   parameter DEBUG = 0;
+   parameter DEBUG = 1;
 
    wire [BUSW-1:0] do_data;
    wire            do_valid, pdi_ready, sdi_ready, rdi_ready, do_last;
@@ -20,7 +20,7 @@ module load_key (/*AUTOARG*/ ) ;
    integer    sdi_cnt;
    integer    pdi_cnt;
 
-   integer    i_sdi, i_pdi, j, i_rdi;
+   integer    i_sdi, i_pdi, j_pdi, j, i_rdi;
    integer    plain_len;
 
    genvar     z;
@@ -68,12 +68,46 @@ module load_key (/*AUTOARG*/ ) ;
          sdi_fifo[6] <= 8'h00;
          sdi_fifo[7] <= 8'h10;
 
-         for (i_sdi = 0; i_sdi < 16; i_sdi = i_sdi + 1) begin
-            sdi_fifo[i_sdi+8] <= i_sdi;
-         end
-         for (i_sdi = 0; i_sdi < 16; i_sdi = i_sdi + 1) begin
-            sdi_fifo[i_sdi+24] <= 8'h00;
-         end
+         sdi_fifo[ 8] <= 00;
+         sdi_fifo[ 9] <= 01;
+         sdi_fifo[10] <= 02;
+         sdi_fifo[11] <= 03;
+
+         sdi_fifo[12] <= 00;
+         sdi_fifo[13] <= 00;
+         sdi_fifo[14] <= 00;
+         sdi_fifo[15] <= 00;
+
+         sdi_fifo[16] <= 04;
+         sdi_fifo[17] <= 05;
+         sdi_fifo[18] <= 06;
+         sdi_fifo[19] <= 07;
+
+         sdi_fifo[20] <= 00;
+         sdi_fifo[21] <= 00;
+         sdi_fifo[22] <= 00;
+         sdi_fifo[23] <= 00;
+
+         sdi_fifo[24] <= 08;
+         sdi_fifo[25] <= 09;
+         sdi_fifo[26] <= 10;
+         sdi_fifo[27] <= 11;
+
+         sdi_fifo[28] <= 00;
+         sdi_fifo[29] <= 00;
+         sdi_fifo[30] <= 00;
+         sdi_fifo[31] <= 00;
+
+         sdi_fifo[32] <= 12;
+         sdi_fifo[33] <= 13;
+         sdi_fifo[34] <= 14;
+         sdi_fifo[35] <= 15;
+
+         sdi_fifo[36] <= 00;
+         sdi_fifo[37] <= 00;
+         sdi_fifo[38] <= 00;
+         sdi_fifo[39] <= 00;
+
          sdi_valid <= 1;
          sdi_cnt <= 40;
       end
@@ -83,10 +117,10 @@ module load_key (/*AUTOARG*/ ) ;
             //$display("%h",sdi_fifo[i_sdi]);
          //end
          sdi_cnt <= sdi_cnt - BUSW/8;
-         for (i_sdi = 0; i_sdi < 24-BUSW/8; i_sdi = i_sdi + 1) begin
+         for (i_sdi = 0; i_sdi < 40-BUSW/8; i_sdi = i_sdi + 1) begin
             sdi_fifo[i_sdi] <= sdi_fifo[i_sdi+BUSW/8];
          end
-         for (i_sdi = 24-BUSW/8; i_sdi < 24; i_sdi = i_sdi + 1) begin
+         for (i_sdi = 40-BUSW/8; i_sdi < 40; i_sdi = i_sdi + 1) begin
             sdi_fifo[i_sdi] <= 0;
          end
          if (sdi_cnt == 0) begin
@@ -128,15 +162,17 @@ module load_key (/*AUTOARG*/ ) ;
          j = j + 1;
          pdi_fifo[j] <= 8'h20;
 
-         for (i_pdi = 0; i_pdi < 16; i_pdi = i_pdi + 1) begin
-            j = j + 1;
-            pdi_fifo[j] <= i_pdi;
-         end // if (pdi_rst)
+         for (j_pdi = 0; j_pdi < 4; j_pdi = j_pdi + 1) begin
+            for (i_pdi = 0; i_pdi < 4; i_pdi = i_pdi + 1) begin
+               j = j + 1;
+               pdi_fifo[j] <= 4*j_pdi + i_pdi;
+            end
 
-         for (i_pdi = 0; i_pdi < 16; i_pdi = i_pdi + 1) begin
-            j = j + 1;
-            pdi_fifo[j] <= 8'h00;
-         end // if (pdi_rst)
+            for (i_pdi = 0; i_pdi < 4; i_pdi = i_pdi + 1) begin
+               j = j + 1;
+               pdi_fifo[j] <= 8'h00;
+            end
+         end // for (j_pdi = 0; j_pdi < 4l j_pdi = j_pdi + 1)
 
          for (i_pdi = 0; i_pdi < 16; i_pdi = i_pdi + 1) begin
             j = j + 1;
@@ -195,25 +231,29 @@ module load_key (/*AUTOARG*/ ) ;
          j = j + 1;
          pdi_fifo[j] <= plain_len;
 
-         for (i_pdi = 0; i_pdi < 32; i_pdi = i_pdi + 1) begin
-            j = j + 1;
-            pdi_fifo[j] <= i_pdi;
-         end
+         for (j_pdi = 0; j_pdi < 4; j_pdi = j_pdi + 1) begin
+            for (i_pdi = 0; i_pdi < 4; i_pdi = i_pdi + 1) begin
+               j = j + 1;
+               pdi_fifo[j] <= 4*j_pdi + i_pdi;
+            end
 
-         for (i_pdi = 0; i_pdi < 16; i_pdi = i_pdi + 1) begin
-            j = j + 1;
-            pdi_fifo[j] <= 8'h00;
-         end // if (pdi_rst)
+            for (i_pdi = 0; i_pdi < 4; i_pdi = i_pdi + 1) begin
+               j = j + 1;
+               pdi_fifo[j] <= 8'h00;
+            end
+         end // for (j_pdi = 0; j_pdi < 4l j_pdi = j_pdi + 1)
 
-         for (i_pdi = 0; i_pdi < 16; i_pdi = i_pdi + 1) begin
-            j = j + 1;
-            pdi_fifo[j] <= i_pdi+16;
-         end // if (pdi_rst)
+         for (j_pdi = 0; j_pdi < 4; j_pdi = j_pdi + 1) begin
+            for (i_pdi = 0; i_pdi < 4; i_pdi = i_pdi + 1) begin
+               j = j + 1;
+               pdi_fifo[j] <= 4*j_pdi + i_pdi + 16;
+            end
 
-         for (i_pdi = 0; i_pdi < 16; i_pdi = i_pdi + 1) begin
-            j = j + 1;
-            pdi_fifo[j] <= 8'h00;
-         end // if (pdi_rst)
+            for (i_pdi = 0; i_pdi < 4; i_pdi = i_pdi + 1) begin
+               j = j + 1;
+               pdi_fifo[j] <= 8'h00;
+            end
+         end // for (j_pdi = 0; j_pdi < 4l j_pdi = j_pdi + 1)
 
          pdi_valid <= 1;
          pdi_cnt <= 1000;
@@ -245,11 +285,14 @@ module load_key (/*AUTOARG*/ ) ;
    always @ (posedge clk) begin
       if (DEBUG) begin
          $display("current state %d", uut.control_unit.fsm);
-         //$display("current state %h", uut.datapath.STATE.state);
-         //$display("current key %h", uut.datapath.TKEYX.state);
-         //$display("current sb %h", uut.datapath.tweakablecipher.sb);
+         $display("current state %h", uut.datapath.STATE.state);
+         $display("current sb %h", uut.datapath.tweakablecipher.roundstate[127:0]^uut.datapath.tweakablecipher.roundstate[255:128]);
+         $display("current sb %h", uut.datapath.tweakablecipher.sb[127:0]^uut.datapath.tweakablecipher.sb[255:128]);
+         $display("current key %h", uut.datapath.TKEYX.state);
+         $display("current tweak %h", uut.datapath.TKEYY.state);
+         $display("current domain separator %h", uut.datapath.TKEYZ.state);
          $display("current cnt %h", uut.control_unit.cnt);
-         //$display("current randomness %h", rdi_data);
+         $display("current randomness %h", rdi_data);
       end
       if (do_valid) begin
          //$display("current pdi %h", pdi_data);
@@ -274,7 +317,7 @@ module load_key (/*AUTOARG*/ ) ;
       pdi_rst = 0;
       rst = neg_rst;
 
-      #5000;
+      #10000;
 
       $finish();
    end

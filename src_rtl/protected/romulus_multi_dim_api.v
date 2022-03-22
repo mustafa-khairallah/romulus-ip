@@ -800,6 +800,8 @@ module romulus_multi_dim_api (/*AUTOARG*/
               yenc <= 1;
               zenc <= 1;
               cntn <= cntw;
+              enrndn <= 1;
+              rdi_ready <= 1;
               if (cnt == FINCONST) begin
                  cntn <= BBUSC;
                  if (instruction == ENCM) begin
@@ -843,6 +845,8 @@ module romulus_multi_dim_api (/*AUTOARG*/
               yenc <= 1;
               zenc <= 1;
               cntn <= cntw;
+              enrndn <= 1;
+              rdi_ready <= 1;
               if (cnt == FINCONST) begin
                  cntn <= BBUSC;
                  if ((seglen == 0) && (flags[1] == 1)) begin
@@ -872,6 +876,8 @@ module romulus_multi_dim_api (/*AUTOARG*/
               yenc <= 1;
               zenc <= 1;
               cntn <= cntw;
+              enrndn <= 1;
+              rdi_ready <= 1;
               if (cnt == FINCONST) begin
                  cntn <= BBUSC;
                  if ((seglen == 0) && (flags[1] == 1)) begin
@@ -1161,6 +1167,8 @@ module romulus_multi_dim_api (/*AUTOARG*/
               yenc <= 1;
               zenc <= 1;
               cntn <= cntw;
+              enrndn <= 1;
+              rdi_ready <= 1;
               if (cnt == FINCONST) begin
                  cntn <= BBUSC;
                  if ((instruction == ENCN) || (instruction == DECN)) begin
