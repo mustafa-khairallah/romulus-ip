@@ -826,7 +826,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
            end // if (enrnd[CLKS_PER_RND-1] == 1)
            else begin
               if (CLKS_PER_RND > 1) begin
-                 enrndn <= {enrnd[CLKS_PER_RND-2:0],enrnd[CLKS_PER_RND]};
+                 enrndn <= {enrnd[CLKS_PER_RND-2:0],enrnd[CLKS_PER_RND-1]};
               end
            end // else: !if(enrnd[CLKS_PER_RND-1] == 1)
         end // case: encryptn
@@ -855,7 +855,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
            end // if (enrnd[CLKS_PER_RND-1] == 1)
            else begin
               if (CLKS_PER_RND > 1) begin
-                 enrndn <= {enrnd[CLKS_PER_RND-2:0],enrnd[CLKS_PER_RND]};
+                 enrndn <= {enrnd[CLKS_PER_RND-2:0],enrnd[CLKS_PER_RND-1]};
               end
            end // else: !if(enrnd[CLKS_PER_RND-1] == 1)
         end // case: encryptmac
@@ -889,7 +889,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
            end // if (enrnd[CLKS_PER_RND-1] == 1)
            else begin
               if (CLKS_PER_RND > 1) begin
-                 enrndn <= {enrnd[CLKS_PER_RND-2:0],enrnd[CLKS_PER_RND]};
+                 enrndn <= {enrnd[CLKS_PER_RND-2:0],enrnd[CLKS_PER_RND-1]};
               end
            end // else: !if(enrnd[CLKS_PER_RND-1] == 1)
         end // case: encryptad
@@ -1209,7 +1209,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
            end // if (enrnd[CLKS_PER_RND-1] == 1)
            else begin
               if (CLKS_PER_RND > 1) begin
-                 enrndn <= {enrnd[CLKS_PER_RND-2:0],enrnd[CLKS_PER_RND]};
+                 enrndn <= {enrnd[CLKS_PER_RND-2:0],enrnd[CLKS_PER_RND-1]};
               end
            end // else: !if(enrnd[CLKS_PER_RND-1] == 1)
         end // case: encryptm

@@ -87,7 +87,7 @@ parameter DOM1SNI   = 3;
 parameter DOM1DEP   = 4;
 
 parameter CMS1      = 5;
-parameter DMS1RPD   = 6;
+parameter CMS1RPD   = 6;
 
 parameter HPC2_1    = 7;
 parameter HPC2_1STR = 8;

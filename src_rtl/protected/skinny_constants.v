@@ -54,7 +54,7 @@ module skinny_constants (/*AUTOARG*/
    assign constant_lut[39] = 6'h1A;
 
    generate
-      for (i = 0; i < RNDS_PER_CLK; i = i + 1) begin
+      for (i = 0; i < RNDS_PER_CLK; i = i + 1) begin:skinny_constants_gen
          assign constant[5+6*i:6*i] = constant_lut[RNDS_PER_CLK*cnt+i];
       end
    endgenerate

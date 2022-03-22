@@ -97,7 +97,7 @@ module padding_mux (/*AUTOARG*/
 
    generate
       for (i = 0; i < BUSW/8; i = i + 1) begin:byte_padding
-         if (i == BUSW/8-1) begin
+         if (i == BUSW/8-1) begin:padding_final_gen
             always @(*) begin
                if (pad_select[i]) begin
                   pdi_padded[BUSW-1-8*i: BUSW-8-8*i] <= pdi_data[BUSW-1-8*i: BUSW-8-8*i];
@@ -123,7 +123,7 @@ module padding_mux (/*AUTOARG*/
                end // else: !if((seglen[1:0] >= i) || (seglen > (cnt << BUSSHIFT)))
             end // always @ (*)
          end // if (i == BUSW/8-1)
-         else begin
+         else begin:padding_normal_gen
             always @(*) begin
                if (pad_select[i])  begin
                   pdi_padded[BUSW-1-8*i: BUSW-8-8*i] <= pdi_data[BUSW-1-8*i: BUSW-8-8*i];

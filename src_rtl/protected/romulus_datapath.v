@@ -246,11 +246,11 @@ module tkx_update (/*AUTOARG*/
    generate
       always @ (posedge clk) begin
          if (rst) begin
-            if (BUSW == 128*KEYSHARES) begin:full_bus_width
+            if (BUSW == 128*shares) begin:full_bus_width
                state <= sdi;
             end
             else begin:half_bus_width
-               state <= {state[128*KEYSHARES-BUSW-1:0],sdi};
+               state <= {state[128*shares-BUSW-1:0],sdi};
             end
          end
          else if (en) begin
