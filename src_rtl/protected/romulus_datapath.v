@@ -2,8 +2,8 @@ module romulus_datapath (/*AUTOARG*/
    // Outputs
    pdo, counter,
    // Inputs
-   constant, decrypt, pdi, sdi, domain, clk, srst, senc, sen, xrst, xenc, xen,
-   yrst, yenc, yen, zrst, zenc, zen, erst, correct_cnt, iv
+   constant, decrypt, pdi, sdi, rdi, domain, clk, srst, senc, sen, xrst, xenc,
+   xen, yrst, yenc, yen, zrst, zenc, zen, erst, correct_cnt, ring_en, iv
    ) ;
 `include "romulus_config_pkg.v"
 
@@ -14,34 +14,42 @@ module romulus_datapath (/*AUTOARG*/
    input [BUSW/8-1:0] decrypt;
    input [BUSW-1:0]   pdi;
    input [BUSW-1:0]   sdi;
-   input [7:0]            domain;
+   input [RNDW-1:0]   rdi;
+   input [7:0]        domain;
 
-   input                  clk;
-   input                  srst, senc, sen;
-   input                  xrst, xenc, xen;
-   input                  yrst, yenc, yen;
-   input                  zrst, zenc, zen;
-   input                  erst;
-   input                  correct_cnt;
-   input                  iv;
+   input              clk;
+   input              srst, senc, sen;
+   input              xrst, xenc, xen;
+   input              yrst, yenc, yen;
+   input              zrst, zenc, zen;
+   input              erst;
+   input              correct_cnt;
+   input [CLKS_PER_RND-1:0] ring_en;
+   input                    iv;
 
    wire [128*STATESHARES-1:0] state_pg;
    wire [128*KEYSHARES-1:0]   key_pg;
-   wire [127:0] 	      tweak_pg;
-   wire [127:0] 	      domainseparator_pg;
-   wire [CONSTW-1:0] constant_pg;
+   wire [128*STATESHARES-1:0] state_rtr;
+   wire [128*KEYSHARES-1:0]   key_rtr;
+   wire [127:0]               tweak_pg;
+   wire [127:0]               domainseparator_pg;
+   wire [CONSTW-1:0]          constant_pg;
 
-   wire [128*STATESHARES-1:0]           state;
-   wire [128*KEYSHARES-1:0] key;
-   wire [127:0]             tweak;
-   wire [127:0]             tbcstate;
-   wire [128*KEYSHARES-1:0] tkxtbc, tkxcorrect;
-   wire [127:0]             tkytbc, tkycorrect;
-   wire [127:0]             tkztbc, tkzcorrect, domainseparator;
-   wire [127:0]             tka, tkb;
-   wire [127:0]             tkc;
-   wire [127:0]             tk1, tk2;
-   wire [127:0]             tk3, cin;
+   wire [128*STATESHARES-1:0] state;
+   wire [128*KEYSHARES-1:0]   key, nextkey;
+   wire [127:0]               tweak;
+   wire [128*STATESHARES-1:0] tbcstate, nextstate;
+   wire [128*KEYSHARES-1:0]   tkxtbc, tkxcorrect;
+   wire [127:0]               tkytbc, tkycorrect;
+   wire [127:0]               tkztbc, tkzcorrect, domainseparator;
+   wire [128*KEYSHARES-1:0]   tka;
+   wire [127:0]               tkb;
+   wire [127:0]               tkc;
+   wire [128*KEYSHARES-1:0]   tk1;
+   wire [127:0]               tk2;
+   wire [127:0]               tk3, cin;
+
+   genvar                     i;
 
    state_update STATE (.pdo(pdo),
                        .state_o(state),
@@ -55,25 +63,25 @@ module romulus_datapath (/*AUTOARG*/
                        .tbc(senc)
                        );
 
-   tkx_update TKEYX (.tkx(key),
-                     .sdi(sdi),
-                     .tkxtbc(tkxtbc),
-                     .tkxcorrect(tkxcorrect),
-                     .clk(clk),
-                     .rst(xrst),
-                     .tbc(xenc),
-                     .en(xen)
-                     ) ;
+   tkx_update #(.shares(KEYSHARES)) TKEYX (.tkx(key),
+                                            .sdi(sdi),
+                                            .tkxtbc(tkxtbc),
+                                            .tkxcorrect(tkxcorrect),
+                                            .clk(clk),
+                                            .rst(xrst),
+                                            .tbc(xenc),
+                                            .en(xen)
+                                            ) ;
 
-   tkx_update TKEYY (.tkx(tweak),
-                     .sdi(pdi),
-                     .tkxtbc(tkytbc),
-                     .tkxcorrect(tkycorrect),
-                     .clk(clk),
-                     .rst(yrst),
-                     .tbc(yenc),
-                     .en(yen)
-                     ) ;
+   tkx_update #(.shares(1)) TKEYY (.tkx(tweak),
+                                   .sdi(pdi),
+                                   .tkxtbc(tkytbc),
+                                   .tkxcorrect(tkycorrect),
+                                   .clk(clk),
+                                   .rst(yrst),
+                                   .tbc(yenc),
+                                   .en(yen)
+                                   ) ;
 
    tkz_update TKEYZ (.tkz(domainseparator),
                      .tkztbc(tkztbc),
@@ -85,79 +93,50 @@ module romulus_datapath (/*AUTOARG*/
                      .en(zen)
                      ) ;
 
+   share_router share_switch (.tbcstate(state_rtr), .statein(state),
+                              .tbckey(key_rtr), .keyin(key),
+                              .stateout(tbcstate), .nextstate(nextstate),
+                              .keycorrect(tkxcorrect),.pcorrectkey(tk1),
+                              .keyout(tkxtbc), .nextkey(nextkey)
+                              ) ;
+
+   skinny_rnd tweakablecipher (.nextcnt(tkztbc),
+                               .nextkey(nextkey),
+                               .nexttweak(tkytbc),
+                               .nextstate(nextstate),
+                               .randomness(rdi),
+                               .clk(clk),
+                               .roundkey(key_pg),
+                               .roundtweak(tweak_pg),
+                               .roundcnt(domainseparator_pg),
+                               .roundstate(state_pg),
+                               .constant(constant_pg)
+                               );
    generate
-      if (TBC == DUMMY) begin
-         dummy_rnd tweakablecipher (.nextcnt(tkztbc),
-                                    .nextkey(tkxtbc),
-                                    .nexttweak(tkytbc),
-                                    .nextstate(tbcstate),
-                                    .roundkey(key_pg),
-                                    .roundtweak(tweak_pg),
-                                    .roundcnt(domainseparator_pg),
-                                    .roundstate(state_pg),
-                                    .constant(constant_pg)
-                                    );
-
-         dummy_correctfullperm PERMA (.tko(tka),.tki(key));
-         dummy_correctfullperm PERMB (.tko(tkb),.tki(tweak));
-         dummy_correctfullperm PERMC (.tko(tkc),.tki(domainseparator));
-
-         dummy_lfsr2_correct LFSR3 (.so(tk1), .si(tka));
-         dummy_lfsr3_correct LFSR2 (.so(tk2), .si(tkb));
-      end // if (TBC == DUMMY)
-      else if (TBC == SKINNY) begin
-	 
-         skinny_rnd #(.numrnd(RNDS_PER_CLK)) tweakablecipher (.nextcnt(tkztbc),
-                                                              .nextkey(tkxtbc),
-                                                              .nexttweak(tkytbc),
-                                                              .nextstate(tbcstate),
-                                                              .roundkey(key_pg),
-                                                              .roundtweak(tweak_pg),
-                                                              .roundcnt(domainseparator_pg),
-                                                              .roundstate(state_pg),
-                                                              .constant(constant_pg)
-                                                              );
-
-         skinny_correctfullperm PERMA (.tko(tka),.tki(key));
-         skinny_correctfullperm PERMB (.tko(tkb),.tki(tweak));
-         skinny_correctfullperm PERMC (.tko(tkc),.tki(domainseparator));
-
-         skinny_lfsr2_20 LFSR3 (.so(tk1), .si(tka));
-         skinny_lfsr3_20 LFSR2 (.so(tk2), .si(tkb));
-      end // if (TBC == SKINNY)
-      else if (TBC == DEOXYS) begin
-         deoxys_rnd #(.numrnd(RNDS_PER_CLK)) tweakablecipher (.nextcnt(tkztbc),
-                                                              .nextkey(tkxtbc),
-                                                              .nexttweak(tkytbc),
-                                                              .nextstate(tbcstate),
-                                                              .roundkey(key_pg),
-                                                              .roundtweak(tweak_pg),
-                                                              .roundcnt(domainseparator_pg),
-                                                              .roundstate(state_pg),
-                                                              .constant(constant_pg)
-                                                              );
-
-         assign tka = key;
-         assign tkb = tweak;
-         assign tkc = domainseparator;
-
-         deoxys_lfsr2_16 LFSR3 (.so(tk1), .si(tka));
-         deoxys_lfsr3_16 LFSR2 (.so(tk2), .si(tkb));
+      for (i = 0; i < KEYSHARES; i = i + 1) begin:key_correction_shared
+            skinny_correctfullperm PERMA (.tko(tka[127+128*i:128*i]),.tki(key_rtr[127+128*i:128*i]));
+            skinny_lfsr2_20 LFSR3 (.so(tk1[127+128*i:128*i]), .si(tka[127+128*i:128*i]));
       end
+   endgenerate
+   skinny_correctfullperm PERMB (.tko(tkb),.tki(tweak));
+   skinny_correctfullperm PERMC (.tko(tkc),.tki(domainseparator));
 
-      if (power_gated == 1) begin
-	 assign constant_pg = senc ? constant : 0;
-	 assign key_pg = senc ? key : 0;
-	 assign tweak_pg = senc ? tweak : 0;
-	 assign state_pg = senc ? state : 0;
-	 assign domainseparator_pg = senc ? domainseparator : 0;
+   skinny_lfsr3_20 LFSR2 (.so(tk2), .si(tkb));
+
+   generate
+      if (power_gated == 1) begin:power_gate_gen
+         assign constant_pg = senc ? constant : 0;
+         assign key_pg = senc ? key_rtr : 0;
+         assign tweak_pg = senc ? tweak : 0;
+         assign state_pg = senc ? state_rtr : 0;
+         assign domainseparator_pg = senc ? domainseparator : 0;
       end
-      else begin
-	 assign constant_pg = constant;
-	 assign key_pg = key;
-	 assign tweak_pg = tweak;
-	 assign state_pg = state;
-	 assign domainseparator_pg = domainseparator;
+      else begin:no_power_gate_gen
+         assign constant_pg = constant;
+         assign key_pg = key_rtr;
+         assign tweak_pg = tweak;
+         assign state_pg = state_rtr;
+         assign domainseparator_pg = domainseparator;
       end
    endgenerate
 
@@ -165,7 +144,7 @@ module romulus_datapath (/*AUTOARG*/
 
    lfsr_gf56 CNT (.so(tk3),.si(cin),.domain(domain));
 
-   assign tkxcorrect = tk1;
+
    assign tkycorrect = tk2;
    assign tkzcorrect = tk3;
 
@@ -180,21 +159,21 @@ module state_update (/*AUTOARG*/
 `include "romulus_config_pkg.v"
 
    output [BUSW-1:0] pdo;
-   output [128*STATESHARES-1:0]        state_o;
+   output [128*STATESHARES-1:0] state_o;
 
-   input [BUSW/8-1:0] decrypt;
-   input [BUSW-1:0]   pdi;
-   input [128*STATESHARES-1:0]          state_i;
-   input                                clk, rst, en, tbc, iv;
+   input [BUSW/8-1:0]           decrypt;
+   input [BUSW-1:0]             pdi;
+   input [128*STATESHARES-1:0]  state_i;
+   input                        clk, rst, en, tbc, iv;
 
-   wire [BUSW-1:0]    pdi_eff;
-   wire [BUSW-1:0]    state_buf;
-   wire [BUSW-1:0]    gofs;
-   wire [128*STATESHARES-1:0]           si;
+   wire [BUSW-1:0]              pdi_eff;
+   wire [BUSW-1:0]              state_buf;
+   wire [BUSW-1:0]              gofs;
+   wire [128*STATESHARES-1:0]   si;
 
-   reg [128*STATESHARES-1:0]            state;
+   reg [128*STATESHARES-1:0]    state;
 
-   genvar                 i;
+   genvar                       i;
 
    assign state_o = state;
 
@@ -212,7 +191,7 @@ module state_update (/*AUTOARG*/
          assign si = iv ? {state[128*STATESHARES-BUSW-1:0],
                            pdo} :
                      {state[128*STATESHARES-BUSW-1:0],
-                           pdi_eff^state[128*STATESHARES-1:128*STATESHARES-BUSW]};
+                      pdi_eff^state[128*STATESHARES-1:128*STATESHARES-BUSW]};
       end
    endgenerate
 
@@ -252,36 +231,37 @@ module tkx_update (/*AUTOARG*/
    sdi, tkxtbc, tkxcorrect, clk, rst, tbc, en
    ) ;
 `include "romulus_config_pkg.v"
+   parameter shares = 1;
 
-   output [128*KEYSHARES-1:0] tkx;
+   output [128*shares-1:0] tkx;
 
-   input [BUSW-1:0] sdi;
-   input [128*KEYSHARES-1:0] tkxtbc, tkxcorrect;
-   input                     clk, rst, tbc, en;
+   input [BUSW-1:0]           sdi;
+   input [128*shares-1:0]  tkxtbc, tkxcorrect;
+   input                      clk, rst, tbc, en;
 
-   reg [128*KEYSHARES-1:0]   state;
+   reg [128*shares-1:0]    state;
 
    assign tkx = state;
 
    generate
-   always @ (posedge clk) begin
-      if (rst) begin
-         if (BUSW == 128*KEYSHARES) begin:full_bus_width
-            state <= sdi;
+      always @ (posedge clk) begin
+         if (rst) begin
+            if (BUSW == 128*KEYSHARES) begin:full_bus_width
+               state <= sdi;
+            end
+            else begin:half_bus_width
+               state <= {state[128*KEYSHARES-BUSW-1:0],sdi};
+            end
          end
-         else begin:half_bus_width
-            state <= {state[128*KEYSHARES-BUSW-1:0],sdi};
+         else if (en) begin
+            if (tbc) begin
+               state <= tkxtbc;
+            end
+            else begin
+               state <= tkxcorrect;
+            end
          end
-      end
-      else if (en) begin
-         if (tbc) begin
-            state <= tkxtbc;
-         end
-         else begin
-            state <= tkxcorrect;
-         end
-      end
-   end // always @ (posedge clk)
+      end // always @ (posedge clk)
    endgenerate
 
 endmodule // tkx_update
@@ -298,7 +278,7 @@ module tkz_update (/*AUTOARG*/
 
    input [127:0]  tkztbc, tkzcorrect;
    input [7:0]    domain;
-   input                    clk, rst, tbc, en;
+   input          clk, rst, tbc, en;
 
    reg [127:0]    state;
 
@@ -349,31 +329,31 @@ module lfsr_gf56 (/*AUTOARG*/
    ) ;
    output [127:0] so;
    input [127:0]  si;
-   input [7:0]   domain;
+   input [7:0]    domain;
 
-   wire [55:0]   lfsr, lfsrs, lfsrn;
+   wire [55:0]    lfsr, lfsrs, lfsrn;
 
    assign lfsr = {
                   si[ 7+64+8: 0+64+8],
-		              si[15+64+8: 8+64+8],
-		              si[23+64+8:16+64+8],
-		              si[31+64+8:24+64+8],
-		              si[39+64+8:32+64+8],
-		              si[47+64+8:40+64+8],
-		              si[55+64+8:48+64+8]
-		              };
+                  si[15+64+8: 8+64+8],
+                  si[23+64+8:16+64+8],
+                  si[31+64+8:24+64+8],
+                  si[39+64+8:32+64+8],
+                  si[47+64+8:40+64+8],
+                  si[55+64+8:48+64+8]
+                  };
 
    assign lfsrs = {lfsr[54:0],lfsr[55]};
    assign lfsrn = lfsrs ^ {lfsr[55],2'b0,lfsr[55],1'b0,lfsr[55],2'b0};
 
    assign so = {lfsrn[7:0],
-		            lfsrn[15:8],
-		            lfsrn[23:16],
-		            lfsrn[31:24],
-		            lfsrn[39:32],
-		            lfsrn[47:40],
-		            lfsrn[55:48],
-		            domain,
+                lfsrn[15:8],
+                lfsrn[23:16],
+                lfsrn[31:24],
+                lfsrn[39:32],
+                lfsrn[47:40],
+                lfsrn[55:48],
+                domain,
                 64'h00};
 
 endmodule // lfsr_gf56
@@ -385,7 +365,7 @@ module dummy_correctfullperm (/*AUTOARG*/
    tki
    ) ;
    output [127:0] tko;
-   input [127:0] tki;
+   input [127:0]  tki;
 
    assign tko = tki - 2;
 endmodule // dummy_correctfullperm
