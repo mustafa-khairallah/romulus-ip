@@ -102,6 +102,6 @@ parameter PINI1     = 13;
 
 parameter DOM1NC    = 14;
 
-parameter MASKING = DOM1NP;
+parameter MASKING = DOM1LR;
 
 

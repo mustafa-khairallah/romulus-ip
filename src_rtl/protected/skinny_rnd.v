@@ -164,10 +164,10 @@ module skinny_rnd (/*AUTOARG*/
    generate
       for (i = 0; i < STATESHARES; i = i + 1) begin:shiftrowsloop
          // ShiftRows
-         assign shr[127+128*i:96+128*i] =  atk[127+128*i:96*i];
-         assign shr[ 95+128*i:64+128*i] = {atk[ 71+128*i:64*i],atk[95+128*i:72+128*i]};
-         assign shr[ 63+128*i:32+128*i] = {atk[ 47+128*i:32*i],atk[63+128*i:48+128*i]};
-         assign shr[ 31+128*i: 0+128*i] = {atk[ 23+128*i: 0*i],atk[31+128*i:24+128*i]};
+         assign shr[127+128*i:96+128*i] =  atk[127+128*i:96+128*i];
+         assign shr[ 95+128*i:64+128*i] = {atk[ 71+128*i:64+128*i],atk[95+128*i:72+128*i]};
+         assign shr[ 63+128*i:32+128*i] = {atk[ 47+128*i:32+128*i],atk[63+128*i:48+128*i]};
+         assign shr[ 31+128*i: 0+128*i] = {atk[ 23+128*i: 0+128*i],atk[31+128*i:24+128*i]};
 
          // MixColumn
          assign mxc[ 95+128*i:64+128*i] = shr[127+128*i:96+128*i];

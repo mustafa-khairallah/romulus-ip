@@ -1,6 +1,6 @@
 module load_key (/*AUTOARG*/ ) ;
 `include "romulus_config_pkg.v"
-   parameter DEBUG = 1;
+   parameter DEBUG = 0;
 
    wire [BUSW-1:0] do_data;
    wire            do_valid, pdi_ready, sdi_ready, rdi_ready, do_last;
@@ -286,8 +286,12 @@ module load_key (/*AUTOARG*/ ) ;
       if (DEBUG) begin
          $display("current state %d", uut.control_unit.fsm);
          $display("current state %h", uut.datapath.STATE.state);
-         $display("current sb %h", uut.datapath.tweakablecipher.roundstate[127:0]^uut.datapath.tweakablecipher.roundstate[255:128]);
+         $display("current rndstate %h", uut.datapath.tweakablecipher.roundstate[127:0]^uut.datapath.tweakablecipher.roundstate[255:128]);
          $display("current sb %h", uut.datapath.tweakablecipher.sb[127:0]^uut.datapath.tweakablecipher.sb[255:128]);
+         $display("current atk %h", uut.datapath.tweakablecipher.atk[127:0]^uut.datapath.tweakablecipher.atk[255:128]);
+         $display("current shr %h", uut.datapath.tweakablecipher.shr[127:0]^uut.datapath.tweakablecipher.shr[255:128]);
+         $display("current mxc %h", uut.datapath.tweakablecipher.mxc[127:0]^uut.datapath.tweakablecipher.mxc[255:128]);
+         $display("current rkey %h", uut.datapath.tweakablecipher.rkey);
          $display("current key %h", uut.datapath.TKEYX.state);
          $display("current tweak %h", uut.datapath.TKEYY.state);
          $display("current domain separator %h", uut.datapath.TKEYZ.state);
