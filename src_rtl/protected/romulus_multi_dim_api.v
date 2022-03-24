@@ -446,6 +446,48 @@ module romulus_multi_dim_api (/*AUTOARG*/
                  pdi_ready <= 1;
                  sen <= 1;
                  if ((cnt == PBUSC) && (share_en[STATESHARES-1] == 1)) begin
+                    if (rdi_valid) begin
+                       seglenn <= 0;
+                       cntn <= BBUSC;
+                       share_enn <= 1;
+                       rdi_ready <= 1;
+                       last <= 1;
+                       if ((instruction == ENCN) || (instruction == DECN)) begin
+                          fsmn <= nonceheader;
+                          nonce_domainn <= adpadded;
+                       end
+                       else if ((instruction == ENCM) || (instruction == DECM)) begin
+                          fsmn <= macheader2;
+                          nonce_domainn <= macfinal ^ 2;
+                       end
+                    end // if (rdi_valid)
+                    else begin
+                       share_enn <= share_en;
+                       cntn <= cnt;
+                    end
+                 end
+                 else begin
+                    if (share_en[STATESHARES-1] == 1) begin
+                       if (rdi_valid) begin
+                          cntn <= cntw;
+                          share_enn <= 1;
+                          rdi_ready <= 1;
+                       end
+                       else begin
+                          share_enn <= share_en;
+                          cntn <= cnt;
+                       end
+                    end
+                    else begin
+                       share_enn <= share_en << 1;
+                    end
+                 end
+              end
+           end
+           else begin
+              sen <= 1;
+              if ((cnt == PBUSC) && (share_en[STATESHARES-1] == 1)) begin
+                 if (rdi_valid) begin
                     seglenn <= 0;
                     cntn <= BBUSC;
                     share_enn <= 1;
@@ -459,41 +501,23 @@ module romulus_multi_dim_api (/*AUTOARG*/
                        fsmn <= macheader2;
                        nonce_domainn <= macfinal ^ 2;
                     end
-                 end
+                 end // if (rdi_valid)
                  else begin
-                    if (share_en[STATESHARES-1] == 1) begin
+                    share_enn <= share_en;
+                    cntn <= cnt;
+                 end
+              end
+              else begin
+                 if (share_en[STATESHARES-1] == 1) begin
+                    if (rdi_valid) begin
                        cntn <= cntw;
                        share_enn <= 1;
                        rdi_ready <= 1;
                     end
                     else begin
-                       share_enn <= share_en << 1;
+                       share_enn <= share_en;
+                       cntn <= cnt;
                     end
-                 end
-              end
-           end
-           else begin
-              sen <= 1;
-              if ((cnt == PBUSC) && (share_en[STATESHARES-1] == 1)) begin
-                 seglenn <= 0;
-                 cntn <= BBUSC;
-                 share_enn <= 1;
-                 rdi_ready <= 1;
-                 last <= 1;
-                 if ((instruction == ENCN) || (instruction == DECN)) begin
-                    fsmn <= nonceheader;
-                    nonce_domainn <= adpadded;
-                 end
-                 else if ((instruction == ENCM) || (instruction == DECM)) begin
-                    fsmn <= macheader2;
-                    nonce_domainn <= macfinal ^ 2;
-                 end
-              end
-              else begin
-                 if (share_en[STATESHARES-1] == 1) begin
-                    cntn <= cntw;
-                    share_enn <= 1;
-                    rdi_ready <= 1;
                  end
                  else begin
                     share_enn <= share_en << 1;
@@ -647,21 +671,33 @@ module romulus_multi_dim_api (/*AUTOARG*/
                  pdi_ready <= 1;
                  sen <= 1;
                  if ((cnt == PBUSC) && (share_en[STATESHARES-1] == 1)) begin
-                    seglenn <= 0;
-                    cntn <= BBUSC;
-                    share_enn <= 1;
-                    rdi_ready <= 1;
-                    last <= 1;
-                    zen <= 1;
-                    correct_cntn <= 1;
-                    fsmn <= nonceheader;
-                    nonce_domainn <= nonce_domain ^ 1 ^ 4 ^ {5'h0,nonce_domain[3],2'h0};
+                    if (rdi_valid) begin
+                       seglenn <= 0;
+                       cntn <= BBUSC;
+                       share_enn <= 1;
+                       rdi_ready <= 1;
+                       last <= 1;
+                       zen <= 1;
+                       correct_cntn <= 1;
+                       fsmn <= nonceheader;
+                       nonce_domainn <= nonce_domain ^ 1 ^ 4 ^ {5'h0,nonce_domain[3],2'h0};
+                    end // if (rdi_valid)
+                    else begin
+                       share_enn <= share_en;
+                       cntn <= cnt;
+                    end // else: !if(rdi_valid)
                  end
                  else begin
                     if (share_en[STATESHARES-1] == 1) begin
-                       cntn <= cntw;
-                       share_enn <= 1;
-                       rdi_ready <= 1;
+                       if (rdi_valid) begin
+                          cntn <= cntw;
+                          share_enn <= 1;
+                          rdi_ready <= 1;
+                       end
+                       else begin
+                          share_enn <= share_en;
+                          cntn <= cnt;
+                       end
                     end
                     else begin
                        share_enn <= share_en << 1;
@@ -672,21 +708,33 @@ module romulus_multi_dim_api (/*AUTOARG*/
            else begin
               sen <= 1;
               if ((cnt == PBUSC) && (share_en[STATESHARES-1] == 1)) begin
-                 seglenn <= 0;
-                 cntn <= BBUSC;
-                 share_enn <= 1;
-                 rdi_ready <= 1;
-                 last <= 1;
-                 fsmn <= nonceheader;
-                 zen <= 1;
-                 correct_cntn <= 1;
-                 nonce_domainn <= nonce_domain ^ 1 ^ 4 ^ {5'h0,nonce_domain[3],2'h0};
-              end
-              else begin
-                 if (share_en[STATESHARES-1] == 1) begin
-                    cntn <= cntw;
+                 if (rdi_valid) begin
+                    seglenn <= 0;
+                    cntn <= BBUSC;
                     share_enn <= 1;
                     rdi_ready <= 1;
+                    last <= 1;
+                    fsmn <= nonceheader;
+                    zen <= 1;
+                    correct_cntn <= 1;
+                    nonce_domainn <= nonce_domain ^ 1 ^ 4 ^ {5'h0,nonce_domain[3],2'h0};
+                 end // if (rdi_valid)
+                 else begin
+                    share_enn <= share_en;
+                    cntn <= cnt;
+                 end // else: !if(rdi_valid)
+              end // if ((cnt == PBUSC) && (share_en[STATESHARES-1] == 1))
+              else begin
+                 if (share_en[STATESHARES-1] == 1) begin
+                    if (rdi_valid) begin
+                       cntn <= cntw;
+                       share_enn <= 1;
+                       rdi_ready <= 1;
+                    end
+                    else begin
+                       share_enn <= share_en;
+                       cntn <= cnt;
+                    end
                  end
                  else begin
                     share_enn <= share_en << 1;
@@ -791,40 +839,45 @@ module romulus_multi_dim_api (/*AUTOARG*/
         encryptn: begin
            correct_cntn <= 0;
            if (enrnd[CLKS_PER_RND-1] == 1) begin
-              sen <= 1;
-              xen <= 1;
-              yen <= 1;
-              zen <= 1;
-              senc <= 1;
-              xenc <= 1;
-              yenc <= 1;
-              zenc <= 1;
-              cntn <= cntw;
-              enrndn <= 1;
-              rdi_ready <= 1;
-              if (cnt == FINCONST) begin
-                 cntn <= BBUSC;
-                 if (instruction == ENCM) begin
-                    fsmn <= outputtag0;
-                    zrst <= 1;
-                    correct_cntn <= 1;
-                 end
-                 else if (instruction == DECM) begin
-                    fsmn <= verifytag0;
-                    zrst <= 1;
-                    correct_cntn <= 1;
-                 end
-                 else if (instruction == ENCN) begin
-                    fsmn <= msgheader;
-                    zrst <= 1;
-                    correct_cntn <= 1;
-                 end
-                 else if (instruction == DECN) begin
-                    fsmn <= msgheader;
-                    zrst <= 1;
-                    correct_cntn <= 1;
-                 end
-              end // if (cnt == FINCONST)
+              if (rdi_valid) begin
+                 sen <= 1;
+                 xen <= 1;
+                 yen <= 1;
+                 zen <= 1;
+                 senc <= 1;
+                 xenc <= 1;
+                 yenc <= 1;
+                 zenc <= 1;
+                 cntn <= cntw;
+                 enrndn <= 1;
+                 rdi_ready <= 1;
+                 if (cnt == FINCONST) begin
+                    cntn <= BBUSC;
+                    if (instruction == ENCM) begin
+                       fsmn <= outputtag0;
+                       zrst <= 1;
+                       correct_cntn <= 1;
+                    end
+                    else if (instruction == DECM) begin
+                       fsmn <= verifytag0;
+                       zrst <= 1;
+                       correct_cntn <= 1;
+                    end
+                    else if (instruction == ENCN) begin
+                       fsmn <= msgheader;
+                       zrst <= 1;
+                       correct_cntn <= 1;
+                    end
+                    else if (instruction == DECN) begin
+                       fsmn <= msgheader;
+                       zrst <= 1;
+                       correct_cntn <= 1;
+                    end
+                 end // if (cnt == FINCONST)
+              end // if (rdi_valid)
+              else begin
+                 share_enn <= share_en;
+              end
            end // if (enrnd[CLKS_PER_RND-1] == 1)
            else begin
               if (CLKS_PER_RND > 1) begin
@@ -836,26 +889,31 @@ module romulus_multi_dim_api (/*AUTOARG*/
            ncrctn <= 1;
            correct_cntn <= 0;
            if (enrnd[CLKS_PER_RND-1] == 1) begin
-              sen <= 1;
-              xen <= 1;
-              yen <= 1;
-              zen <= 1;
-              senc <= 1;
-              xenc <= 1;
-              yenc <= 1;
-              zenc <= 1;
-              cntn <= cntw;
-              enrndn <= 1;
-              rdi_ready <= 1;
-              if (cnt == FINCONST) begin
-                 cntn <= BBUSC;
-                 if ((seglen == 0) && (flags[1] == 1)) begin
-                    fsmn <= nonceheader;
-                 end
-                 else begin
-                    fsmn <= macheader;
-                 end
-              end // if (cnt == FINCONST)
+              if (rdi_valid) begin
+                 sen <= 1;
+                 xen <= 1;
+                 yen <= 1;
+                 zen <= 1;
+                 senc <= 1;
+                 xenc <= 1;
+                 yenc <= 1;
+                 zenc <= 1;
+                 cntn <= cntw;
+                 enrndn <= 1;
+                 rdi_ready <= 1;
+                 if (cnt == FINCONST) begin
+                    cntn <= BBUSC;
+                    if ((seglen == 0) && (flags[1] == 1)) begin
+                       fsmn <= nonceheader;
+                    end
+                    else begin
+                       fsmn <= macheader;
+                    end
+                 end // if (cnt == FINCONST)
+              end // if (rdi_valid)
+              else begin
+                 share_enn <= share_en;
+              end
            end // if (enrnd[CLKS_PER_RND-1] == 1)
            else begin
               if (CLKS_PER_RND > 1) begin
@@ -867,31 +925,36 @@ module romulus_multi_dim_api (/*AUTOARG*/
            ncrctn <= 1;
            correct_cntn <= 0;
            if (enrnd[CLKS_PER_RND-1] == 1) begin
-              sen <= 1;
-              xen <= 1;
-              yen <= 1;
-              zen <= 1;
-              senc <= 1;
-              xenc <= 1;
-              yenc <= 1;
-              zenc <= 1;
-              cntn <= cntw;
-              enrndn <= 1;
-              rdi_ready <= 1;
-              if (cnt == FINCONST) begin
-                 cntn <= BBUSC;
-                 if ((seglen == 0) && (flags[1] == 1)) begin
-                    if ((instruction == ENCN) || (instruction == DECN)) begin
-                       fsmn <= nonceheader;
+              if (rdi_valid) begin
+                 sen <= 1;
+                 xen <= 1;
+                 yen <= 1;
+                 zen <= 1;
+                 senc <= 1;
+                 xenc <= 1;
+                 yenc <= 1;
+                 zenc <= 1;
+                 cntn <= cntw;
+                 enrndn <= 1;
+                 rdi_ready <= 1;
+                 if (cnt == FINCONST) begin
+                    cntn <= BBUSC;
+                    if ((seglen == 0) && (flags[1] == 1)) begin
+                       if ((instruction == ENCN) || (instruction == DECN)) begin
+                          fsmn <= nonceheader;
+                       end
+                       else if ((instruction == ENCM) || (instruction == DECM)) begin
+                          fsmn <= macheader;
+                       end
                     end
-                    else if ((instruction == ENCM) || (instruction == DECM)) begin
-                       fsmn <= macheader;
+                    else begin
+                       fsmn <= adheader;
                     end
-                 end
-                 else begin
-                    fsmn <= adheader;
-                 end
-              end // if (cnt == FINCONST)
+                 end // if (cnt == FINCONST)
+              end // if (rdi_valid)
+              else begin
+                 share_enn <= share_en;
+              end
            end // if (enrnd[CLKS_PER_RND-1] == 1)
            else begin
               if (CLKS_PER_RND > 1) begin
@@ -1051,9 +1114,14 @@ module romulus_multi_dim_api (/*AUTOARG*/
                     sen <= 1;
                     if (cnt == BBUSC) begin
                        if (share_en[STATESHARES-1] == 1) begin
-                          cntn <= cntw;
-                          share_enn <= 1;
-                          rdi_ready <= 1;
+                          if (rdi_valid) begin
+                             cntn <= cntw;
+                             share_enn <= 1;
+                             rdi_ready <= 1;
+                          end // if (rdi_valid)
+                          else begin
+                             share_enn <= share_en;
+                          end
                        end
                        else begin
                           share_enn <= share_en << 1;
@@ -1065,35 +1133,45 @@ module romulus_multi_dim_api (/*AUTOARG*/
                             domain <= msgpadded;
                          end
                        if (share_en[STATESHARES-1] == 1) begin
-                          if (instruction == ENCN) begin
-                             fsmn <= encryptm;
+                          if (rdi_valid) begin
+                             if (instruction == ENCN) begin
+                                fsmn <= encryptm;
+                             end
+                             else if (instruction == DECN) begin
+                                fsmn <= encryptm;
+                             end
+                             else if (instruction == ENCM) begin
+                                fsmn <= statuse;
+                             end
+                             else if (instruction == DECM) begin
+                                fsmn <= adheader;
+                             end
+                             zen <= 1;
+                             yen <= 1;
+                             xen <= 1;
+                             correct_cntn <= 1;
+                             cntn <= BBUSC;
+                             share_enn <= 1;
+                             rdi_ready <= 1;
+                          end // if (rdi_valid)
+                          else begin
+                             share_enn <= share_en;
                           end
-                          else if (instruction == DECN) begin
-                             fsmn <= encryptm;
-                          end
-                          else if (instruction == ENCM) begin
-                             fsmn <= statuse;
-                          end
-                          else if (instruction == DECM) begin
-                             fsmn <= adheader;
-                          end
-                          zen <= 1;
-                          yen <= 1;
-                          xen <= 1;
-                          correct_cntn <= 1;
-                          cntn <= BBUSC;
-                          share_enn <= 1;
-                          rdi_ready <= 1;
-                       end
+                       end // if (share_en[STATESHARES-1] == 1)
                        else begin
                           share_enn <= share_en << 1;
                        end
                     end // if (cnt == PBUSC)
                     else begin
                        if (share_en[STATESHARES-1] == 1) begin
-                          cntn <= cntw;
-                          share_enn <= 1;
-                          rdi_ready <= 1;
+                          if (rdi_valid) begin
+                             cntn <= cntw;
+                             share_enn <= 1;
+                             rdi_ready <= 1;
+                          end
+                          else begin
+                             share_enn <= share_en;
+                          end
                        end
                        else begin
                           share_enn <= share_en << 1;
@@ -1158,62 +1236,67 @@ module romulus_multi_dim_api (/*AUTOARG*/
         encryptm: begin
            correct_cntn <= 0;
            if (enrnd[CLKS_PER_RND-1] == 1) begin
-              sen <= 1;
-              xen <= 1;
-              yen <= 1;
-              zen <= 1;
-              senc <= 1;
-              xenc <= 1;
-              yenc <= 1;
-              zenc <= 1;
-              cntn <= cntw;
-              enrndn <= 1;
-              rdi_ready <= 1;
-              if (cnt == FINCONST) begin
-                 cntn <= BBUSC;
-                 if ((instruction == ENCN) || (instruction == DECN)) begin
-                    if (seglen == 0) begin
-                       if (flags[1] == 1) begin
-                          if (dec == 1) begin
-                             fsmn <= verifytag0;
+              if (rdi_valid) begin
+                 sen <= 1;
+                 xen <= 1;
+                 yen <= 1;
+                 zen <= 1;
+                 senc <= 1;
+                 xenc <= 1;
+                 yenc <= 1;
+                 zenc <= 1;
+                 cntn <= cntw;
+                 enrndn <= 1;
+                 rdi_ready <= 1;
+                 if (cnt == FINCONST) begin
+                    cntn <= BBUSC;
+                    if ((instruction == ENCN) || (instruction == DECN)) begin
+                       if (seglen == 0) begin
+                          if (flags[1] == 1) begin
+                             if (dec == 1) begin
+                                fsmn <= verifytag0;
+                             end
+                             else begin
+                                fsmn <= outputtag0;
+                             end
+                             seglenn <= 0;
                           end
                           else begin
-                             fsmn <= outputtag0;
+                             fsmn <= msgheader;
                           end
-                          seglenn <= 0;
+                       end
+                       else if (seglen < 16) begin
+                          fsmn <= storemp;
                        end
                        else begin
-                          fsmn <= msgheader;
+                          fsmn <= storemf;
                        end
                     end
-                    else if (seglen < 16) begin
-                       fsmn <= storemp;
+                    else if (instruction == ENCM) begin
+                       if (emptymsg == 0) begin
+                          emptymsgn <= 1;
+                          fsmn <= msgheader;
+                       end
+                       else if (seglen < 16) begin
+                          fsmn <= storemp;
+                       end
+                       else begin
+                          fsmn <= storemf;
+                       end
                     end
-                    else begin
-                       fsmn <= storemf;
+                    else if (instruction == DECM) begin
+                       if (seglen < 16) begin
+                          fsmn <= storemp;
+                       end
+                       else begin
+                          fsmn <= storemf;
+                       end
                     end
-                 end
-                 else if (instruction == ENCM) begin
-                    if (emptymsg == 0) begin
-                       emptymsgn <= 1;
-                       fsmn <= msgheader;
-                    end
-                    else if (seglen < 16) begin
-                       fsmn <= storemp;
-                    end
-                    else begin
-                       fsmn <= storemf;
-                    end
-                 end
-                 else if (instruction == DECM) begin
-                    if (seglen < 16) begin
-                       fsmn <= storemp;
-                    end
-                    else begin
-                       fsmn <= storemf;
-                    end
-                 end
-              end // if (cnt == FINCONST)
+                 end // if (cnt == FINCONST)
+              end // if (rdi_valid)
+              else begin
+                 share_enn <= share_en;
+              end
            end // if (enrnd[CLKS_PER_RND-1] == 1)
            else begin
               if (CLKS_PER_RND > 1) begin

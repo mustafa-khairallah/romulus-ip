@@ -47,6 +47,7 @@ module load_key (/*AUTOARG*/ ) ;
    endgenerate
 
    always@(posedge clk) begin
+      rdi_valid <= 1;
       if (sdi_rst || rdi_ready) begin
          for (i_rdi = 0; i_rdi < RNDW/32; i_rdi = i_rdi + 1) begin
             rdi_fifo[i_rdi] <= $random;
