@@ -35,117 +35,14 @@ module skinny_rnd (/*AUTOARG*/
 
    generate
       for (j = 0; j < 16; j = j + 1) begin:sbox_loop
-         if (MASKING==DOM1NP) begin:dom1np
-            skinny_sbox8_dom1_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
+         if (MASKING==DOM1NC) begin:dom1nc
+            skinny_sbox8_dom1_sni_non_complete sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
                                                       .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
                                                       .si1(roundstate[8*j+128+7:8*j+128+0]),
                                                       .si0(roundstate[8*j+  0+7:8*j+  0+0]),
                                                       .r(randomness[RNDW/16*j+7:RNDW/16*j]),
+						      .cycle(ring_en[CLKS_PER_RND-3:0]),
                                                       .clk(clk));
-         end
-         else if (MASKING==DOM1LR) begin
-            skinny_sbox8_dom1_less_reg_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                            .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                            .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                            .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                            .r(randomness[RNDW/16*j+7:RNDW/16*j]),
-                                                            .clk(clk));
-         end
-         else if (MASKING==DOM1RPD) begin
-            skinny_sbox8_dom1_rapid_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                         .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                         .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                         .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                         .r(randomness[RNDW/16*j+24:RNDW/16*j]),
-                                                         .clk(clk));
-         end
-         else if (MASKING==DOM1SNI) begin
-            skinny_sbox8_dom1_sni_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                       .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                       .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                       .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                       .r(randomness[RNDW/16*j+7:RNDW/16*j]),
-                                                       .clk(clk));
-         end
-         else if (MASKING==DOM1DEP) begin
-            skinny_sbox8_dom1_dep_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                       .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                       .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                       .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                       .r(randomness[RNDW/16*j+15:RNDW/16*j]),
-                                                       .clk(clk));
-         end
-         else if (MASKING==CMS1) begin
-            skinny_sbox8_cms1_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                      .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                      .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                      .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                      .r(randomness[RNDW/16*j+31:RNDW/16*j]),
-                                                      .clk(clk));
-         end
-         else if (MASKING==CMS1RPD) begin
-            skinny_sbox8_cms1_rapid_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                         .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                         .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                         .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                         .r(randomness[RNDW/16*j+75:RNDW/16*j]),
-                                                         .clk(clk));
-         end
-         else if (MASKING==HPC2_1) begin
-            skinny_sbox8_hpc2_1_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                     .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                     .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                     .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                     .r(randomness[RNDW/16*j+7:RNDW/16*j]),
-                                                     .clk(clk));
-         end
-         else if (MASKING==HPC2_1STR) begin
-            skinny_sbox8_hpc2_1_str_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                         .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                         .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                         .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                         .r(randomness[RNDW/16*j+15:RNDW/16*j]),
-                                                         .clk(clk));
-         end
-         else if (MASKING==ISW1) begin
-            skinny_sbox8_isw1_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                   .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                   .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                   .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                   .r(randomness[RNDW/16*j+7:RNDW/16*j]),
-                                                   .clk(clk));
-         end
-         else if (MASKING==ISW1BP) begin
-            skinny_sbox8_isw1_bypass_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                          .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                          .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                          .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                          .r(randomness[RNDW/16*j+7:RNDW/16*j]),
-                                                          .clk(clk));
-         end
-         else if (MASKING==ISW1PINI) begin
-            skinny_sbox8_isw1_pini_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                        .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                        .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                        .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                        .r(randomness[RNDW/16*j+15:RNDW/16*j]),
-                                                        .clk(clk));
-         end
-         else if (MASKING==PARA1) begin
-            skinny_sbox8_para1_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                    .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                    .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                    .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                    .r(randomness[RNDW/16*j+15:RNDW/16*j]),
-                                                    .clk(clk));
-         end
-         else if (MASKING==PINI1) begin
-            skinny_sbox8_pini1_non_pipelined sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                    .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                    .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                    .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                    .r(randomness[RNDW/16*j+7:RNDW/16*j]),
-                                                    .clk(clk));
          end
       end
    endgenerate

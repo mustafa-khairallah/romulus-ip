@@ -10,8 +10,8 @@ module share_router (/*AUTOARG*/
    output [128*KEYSHARES-1:0]   tbckey;
    output [128*KEYSHARES-1:0]   keyout;
    output [128*KEYSHARES-1:0]   keycorrect;
-   input [128*KEYSHARES-1:0]  statein;
-   input [128*KEYSHARES-1:0]  nextstate;
+   input [128*STATESHARES-1:0]  statein;
+   input [128*STATESHARES-1:0]  nextstate;
    input [128*KEYSHARES-1:0]  keyin;
    input [128*KEYSHARES-1:0]  nextkey;
    input [128*KEYSHARES-1:0]  pcorrectkey;

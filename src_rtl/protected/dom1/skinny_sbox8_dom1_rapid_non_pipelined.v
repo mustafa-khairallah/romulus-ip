@@ -132,6 +132,41 @@ module dom1_rpd_sbox8_cfn_fr (/*AUTOARG*/
    
 endmodule // dom1_sbox8_corefn_fullreg
 
+module dom1_rpd_sbox8_cfn_fr_ne (/*AUTOARG*/
+			         // Outputs
+			         f,
+			         // Inputs
+			         x, y, z, r, clk
+			      ) ;
+
+   (*equivalent_register_removal = "no" *)output [1:0]        f;
+
+   (*equivalent_register_removal = "no" *)input [1:0]         x, y, z;
+
+   (*equivalent_register_removal = "no" *)input               r, clk;
+
+
+   (*equivalent_register_removal = "no" *)reg [1:0]    g, t;
+
+      always @ (negedge clk) begin
+	 g[1] <= (~x[1]) & (~y[1]) ^ z[1];
+
+	 g[0] <=   x[0]  &   y[0]  ^ z[0];
+
+
+	 t[1] <= ((~x[1]) &  y[0] ) ^ r;
+
+	 t[0] <= ((~y[1]) &  x[0] ) ^ r;
+
+      end // always @ (posedge clk)
+
+   assign f[0] = t[0] ^ g[0];
+
+   assign f[1] = t[1] ^ g[1];
+
+
+   endmodule // dom1_sbox8_corefn_fullreg
+
 // Rapid calculation of a[3].
 module rapid_a3 (/*AUTOARG*/
    // Outputs
@@ -203,6 +238,70 @@ module rapid_a7 (/*AUTOARG*/
 endmodule // rapid_a7
 
 // Domain-oriented 4-way AND gate (GF(2) multiplier).
+module and4_dom1_ne (/*AUTOARG*/
+		     // Outputs
+		     z,
+		     // Inputs
+		     a, b, c, d, r, clk
+		  ) ;
+
+   (*equivalent_register_removal = "no" *)output [1:0]  z;
+
+   (*equivalent_register_removal = "no" *)input [1:0]   a, b, c, d;
+
+   (*equivalent_register_removal = "no" *)input [6:0]    r;
+
+   (*equivalent_register_removal = "no" *)input         clk;
+
+
+   (*equivalent_register_removal = "no" *)reg [15:0]    comp;
+
+   always @ (negedge clk) begin
+      comp[ 0] <= (a[0] & b[0] & c[0] & d[0]);
+      
+      comp[ 1] <= (a[0] & b[0] & c[0] & d[1]) ^ r[0];
+      //
+      comp[ 2] <= (a[0] & b[0] & c[1] & d[0]) ^ r[1];
+      //
+      comp[ 3] <= (a[0] & b[0] & c[1] & d[1]) ^ r[2];
+      ///
+      comp[ 4] <= (a[0] & b[1] & c[0] & d[0]) ^ r[3];
+      //
+      comp[ 5] <= (a[0] & b[1] & c[0] & d[1]) ^ r[4];
+      ///
+      comp[ 6] <= (a[0] & b[1] & c[1] & d[0]) ^ r[5];
+      ///
+      comp[ 7] <= (a[0] & b[1] & c[1] & d[1]) ^ r[6];
+      //
+      comp[ 8] <= (a[1] & b[0] & c[0] & d[0]) ^ r[6];
+      //
+      comp[ 9] <= (a[1] & b[0] & c[0] & d[1]) ^ r[5];
+      ///
+      comp[10] <= (a[1] & b[0] & c[1] & d[0]) ^ r[4];
+      ///
+      comp[11] <= (a[1] & b[0] & c[1] & d[1]) ^ r[3];
+      //
+      comp[12] <= (a[1] & b[1] & c[0] & d[0]) ^ r[2];
+      ///
+      comp[13] <= (a[1] & b[1] & c[0] & d[1]) ^ r[1];
+      //
+      comp[14] <= (a[1] & b[1] & c[1] & d[0]) ^ r[0];
+      //
+      comp[15] <= (a[1] & b[1] & c[1] & d[1]);
+      
+   end // always @ (posedge clk)
+   
+   assign z[0] = comp[ 0] ^ comp[ 1] ^ comp[ 2] ^ comp[ 3] ^
+		 comp[ 4] ^ comp[ 5] ^ comp[ 6] ^ comp[ 7];
+
+   assign z[1] = comp[ 8] ^ comp[ 9] ^ comp[10] ^ comp[11] ^
+		 comp[12] ^ comp[13] ^ comp[14] ^ comp[15];
+
+
+endmodule // and4_dom1_ne
+
+
+   
 module and4_dom1 (/*AUTOARG*/
    // Outputs
    z,
@@ -272,6 +371,51 @@ module and3_dom1 (/*AUTOARG*/
    
 endmodule // and3_dom1
 
+module and3_dom1_ne (/*AUTOARG*/
+		     // Outputs
+		     z,
+		     // Inputs
+		     a, b, c, r, clk
+		  ) ;
+
+   (*equivalent_register_removal = "no" *)output [1:0]  z;
+
+   (*equivalent_register_removal = "no" *)input [1:0]   a, b, c;
+
+   (*equivalent_register_removal = "no" *)input [2:0]    r;
+
+   (*equivalent_register_removal = "no" *)input         clk;
+
+
+   (*equivalent_register_removal = "no" *)reg [7:0]    comp;
+
+
+      always @ (negedge clk) begin
+	 comp[0] <= (a[0] & b[0] & c[0]);
+
+	 comp[1] <= (a[0] & b[0] & c[1]) ^ r[0];
+	 //
+	 comp[2] <= (a[0] & b[1] & c[0]) ^ r[1];
+	 //
+	 comp[3] <= (a[0] & b[1] & c[1]) ^ r[2];
+	 //
+	 comp[4] <= (a[1] & b[0] & c[0]) ^ r[2];
+	 //
+	 comp[5] <= (a[1] & b[0] & c[1]) ^ r[1];
+	 //
+	 comp[6] <= (a[1] & b[1] & c[0]) ^ r[0];
+	 //
+	 comp[7] <= (a[1] & b[1] & c[1]);
+
+	    end // always @ (posedge clk)
+
+   assign z[0] = comp[0] ^ comp[1] ^ comp[2] ^ comp[3];
+
+   assign z[1] = comp[4] ^ comp[5] ^ comp[6] ^ comp[7];
+
+
+endmodule // and3_dom1   
+
 // Domain-oriented 2-way AND gate (GF(2) multiplier).
 module and2_dom1 (/*AUTOARG*/
    // Outputs
@@ -297,3 +441,40 @@ module and2_dom1 (/*AUTOARG*/
    assign z[1] = comp[2] ^ comp[3];
    
 endmodule // and2_dom1
+
+module and2_dom1_ne (/*AUTOARG*/
+		     // Outputs
+		     z,
+		     // Inputs
+		     a, b, r, clk
+		  ) ;
+
+   (*equivalent_register_removal = "no" *)output [1:0]  z;
+
+   (*equivalent_register_removal = "no" *)input [1:0]   a, b;
+
+   (*equivalent_register_removal = "no" *)input          r;
+
+   (*equivalent_register_removal = "no" *)input         clk;
+
+
+   (*equivalent_register_removal = "no" *)reg [3:0]    comp;
+
+
+      always @ (negedge clk) begin
+	 comp[0] <= (a[0] & b[0]);
+
+	 comp[1] <= (a[0] & b[1]) ^ r;
+	 //
+	 comp[2] <= (a[1] & b[0]) ^ r;
+	 //
+	 comp[3] <= (a[1] & b[1]);
+
+	    end // always @ (posedge clk)
+
+   assign z[0] = comp[0] ^ comp[1];
+
+   assign z[1] = comp[2] ^ comp[3];
+
+
+   endmodule // and2_dom1
