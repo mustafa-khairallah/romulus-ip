@@ -51,6 +51,9 @@ module romulus_datapath_nc (/*AUTOARG*/
    wire [127:0]               tk2;
    wire [127:0]               tk3, cin;
 
+   wire [128*KEYSHARES-1:0] 	      tk1_pg;
+   wire [128*KEYSHARES-1:0]               key_rtr_pg;
+   
    genvar                     i;
 
    state_update STATE (.pdo(pdo),
@@ -119,13 +122,15 @@ module romulus_datapath_nc (/*AUTOARG*/
                                .ring_en(ring_en)
                                );
 
-   wire [255:0]               key_rtr_pg;
-   wire [255:0]               tk1_pg;
 
-   assign key_rtr_pg[255:128] = (xen & ~xenc & share_en[1]) ? key_rtr[255:128] : 0;
+   generate
+      if (KEYSHARES > 1) begin:extra_keyshare_top
+	 assign key_rtr_pg[255:128] = (xen & ~xenc & share_en[1]) ? key_rtr[255:128] : 0;
+	 assign tk1_pg[255:128] = share_en[1] ? tk1[255:128] : 0;
+      end
+   endgenerate
+   
    assign key_rtr_pg[127:  0] = (xen & ~xenc & share_en[0]) ? key_rtr[127:  0] : 0;
-
-   assign tk1_pg[255:128] = share_en[1] ? tk1[255:128] : 0;
    assign tk1_pg[127:  0] = share_en[0] ? tk1[127:  0] : 0;
 
    generate
@@ -282,26 +287,46 @@ module tkx_update (/*AUTOARG*/
          end
          else if (en) begin
             if (tbc) begin
-               if (tbc_share_en[0]) begin
-		              state[127:0] <= tkxtbc[127:0];
-	             end
-	             else if (tbc_share_en[1]) begin
-		              state[255:128] <= tkxtbc[255:128];
-	             end
-	             else begin
-		              state <= state;
-	             end
-            end
+	       if (shares > 1) begin:protected_key_tbc
+		  if (tbc_share_en[0]) begin
+		     state[127:0] <= tkxtbc[127:0];
+		  end
+		  else if (tbc_share_en[1]) begin
+		     state[255:128] <= tkxtbc[255:128];
+		  end
+		  else begin
+		     state <= state;
+		  end
+	       end // block: protected_key_tbc
+	       else begin:unprotected_key
+		  if (tbc_share_en[0]) begin
+		     state[127:0] <= tkxtbc[127:0];
+		  end
+		  else begin
+		     state <= state;
+		  end
+	       end	       
+            end // if (tbc)
             else begin
-               if (share_en[0]) begin
-		              state[127:0] <= tkxcorrect[127:0];
-	             end
-	             else if (share_en[1]) begin
-		              state[255:128] <= tkxcorrect[255:128];
-	             end
-	             else begin
-		              state <= state;
-	             end
+	       if (shares > 1) begin:protected_key_mode
+		  if (share_en[0]) begin
+		     state[127:0] <= tkxcorrect[127:0];
+		  end
+		  else if (share_en[1]) begin
+		     state[255:128] <= tkxcorrect[255:128];
+		  end
+		  else begin
+		     state <= state;
+		  end
+	       end // block: protected_key_mode
+	       else begin:unprotected_key_mode
+		  if (share_en[0]) begin
+		     state[127:0] <= tkxcorrect[127:0];
+		  end
+		  else begin
+		     state <= state;
+		  end
+	       end
             end
          end
       end // always @ (posedge clk)

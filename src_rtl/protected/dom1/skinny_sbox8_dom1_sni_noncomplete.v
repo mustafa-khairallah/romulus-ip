@@ -52,13 +52,13 @@ module skinny_sbox8_dom1_sni_non_complete (/*AUTOARG*/
    assign bi7 = {si1[7],si0[7]};
 
    dom1_sni_sbox8_cfn_nc b764 (a0,bi7,bi6,bi4,cycle[ 5: 0],r[0],clk);
-	 dom1_sni_sbox8_cfn_nc b320 (a1,bi3,bi2,bi0,cycle[ 5: 0],r[1],clk);
-	 dom1_sni_sbox8_cfn_nc b216 (a2,bi2,bi1,bi6,cycle[ 5: 0],r[2],clk);
-	 dom1_sni_sbox8_cfn_nc b015 (a3,a0, a1, bi5,cycle[11: 6],r[3],clk);
-	 dom1_sni_sbox8_cfn_nc b131 (a4,a1, bi3,bi1,cycle[11: 6],r[4],clk);
-	 dom1_sni_sbox8_cfn_nc b237 (a5,a2, a3, bi7,cycle[17:12],r[5],clk);
-	 dom1_sni_sbox8_cfn_nc b303 (a6,a3, a0, bi3,cycle[17:12],r[6],clk);
-	 dom1_sni_sbox8_cfn_nc b422 (a7,a4, a5, bi2,cycle[23:18],r[7],clk);
+   dom1_sni_sbox8_cfn_nc b320 (a1,bi3,bi2,bi0,cycle[ 5: 0],r[1],clk);
+   dom1_sni_sbox8_cfn_nc b216 (a2,bi2,bi1,bi6,cycle[ 5: 0],r[2],clk);
+   dom1_sni_sbox8_cfn_nc b015 (a3,a0, a1, bi5,cycle[11: 6],r[3],clk);
+   dom1_sni_sbox8_cfn_nc b131 (a4,a1, bi3,bi1,cycle[11: 6],r[4],clk);
+   dom1_sni_sbox8_cfn_nc b237 (a5,a2, a3, bi7,cycle[17:12],r[5],clk);
+   dom1_sni_sbox8_cfn_nc b303 (a6,a3, a0, bi3,cycle[17:12],r[6],clk);
+   dom1_sni_sbox8_cfn_nc b422 (a7,a4, a5, bi2,cycle[23:18],r[7],clk);
 
    assign {bo1[6],bo0[6]} = a0;
    assign {bo1[5],bo0[5]} = a1;

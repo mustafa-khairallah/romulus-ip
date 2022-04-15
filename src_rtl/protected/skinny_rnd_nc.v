@@ -36,25 +36,43 @@ module skinny_rnd_nc (/*AUTOARG*/
    generate
       for (j = 0; j < 16; j = j + 1) begin:sbox_loop
          if (MASKING==DOM1NC) begin:dom1nc
-            skinny_sbox8_dom1_sni_non_complete sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
-                                                      .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
-                                                      .si1(roundstate[8*j+128+7:8*j+128+0]),
-                                                      .si0(roundstate[8*j+  0+7:8*j+  0+0]),
-                                                      .r(randomness[RNDW/16*j+7:RNDW/16*j]),
-						                                          .cycle(ring_en[CLKS_PER_RND-3:0]),
-                                                      .clk(clk));
-         end
-      end
+	    if (CLKS_PER_RND == 26) begin:single_edge
+               skinny_sbox8_dom1_sni_non_complete sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
+							 .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
+							 .si1(roundstate[8*j+128+7:8*j+128+0]),
+							 .si0(roundstate[8*j+  0+7:8*j+  0+0]),
+							 .r(randomness[RNDW/16*j+7:RNDW/16*j]),
+							 .cycle(ring_en[CLKS_PER_RND-3:0]),
+							 .clk(clk));
+	    end
+	    else begin:double_edge
+	       skinny_sbox8_dom1_sni_non_complete_de sbox0 (.bo1(sb[8*j+ 7+128:8*j+128+0]),
+							    .bo0(sb[8*j+ 7+  0:8*j+  0+0]),
+							    .si1(roundstate[8*j+128+7:8*j+128+0]),
+							    .si0(roundstate[8*j+  0+7:8*j+  0+0]),
+							    .r(randomness[RNDW/16*j+7:RNDW/16*j]),
+							    .cycle_i(ring_en[CLKS_PER_RND-3:0]),
+							    .clk(clk));
+	    end
+         end // block: dom1nc	 
+      end // block: sbox_loop
    endgenerate
 
-
-   wire [STATESHARES-1:0] sb_pg;
-   wire [KEYSHARES-1:0] rkey_pg;
-
+   wire [128*STATESHARES-1:0] sb_pg;
+   wire [128*KEYSHARES-1:0] rkey_pg;
+   wire [128*KEYSHARES-1:0] rndkey_pg;
+   wire [128*KEYSHARES-1:0] nextkey_pg;
+   
    assign sb_pg[255:128] = ring_en[CLKS_PER_RND-1] ? sb[255:128] : 128'h0;
    assign sb_pg[127:  0] = ring_en[CLKS_PER_RND-2] ? sb[127:  0] : 128'h0;
 
-   assign rkey_pg[255:128] = ring_en[CLKS_PER_RND-1] ? rkey[255:128] : 128'h0;
+   generate
+      if (KEYSHARES > 1) begin:extra_keyshare
+	 assign rkey_pg[255:128] = ring_en[CLKS_PER_RND-1] ? rkey[255:128] : 128'h0;
+	 assign rndkey_pg[255:128] = ring_en[CLKS_PER_RND-1] ? rndkey[255:128] : 128'h0;
+	 assign nextkey_pg[255:128] = ring_en[CLKS_PER_RND-1] ? nextkey[255:128] : 128'h0;
+      end
+   endgenerate
    assign rkey_pg[127:  0] = ring_en[CLKS_PER_RND-2] ? rkey[127:  0] : 128'h0;
 
    // Add Tweakey
@@ -89,14 +107,8 @@ module skinny_rnd_nc (/*AUTOARG*/
    assign nextstate_pg[255:128] = ring_en[CLKS_PER_RND-1] ? nextstate[255:128] : 128'h0;
    assign nextstate_pg[127:  0] = ring_en[CLKS_PER_RND-2] ? nextstate[127:  0] : 128'h0;
 
-   wire [255:0] nextkey_pg;
-
-   assign nextkey_pg[255:128] = ring_en[CLKS_PER_RND-1] ? nextkey[255:128] : 128'h0;
    assign nextkey_pg[127:  0] = ring_en[CLKS_PER_RND-2] ? nextkey[127:  0] : 128'h0;
 
-   wire [255:0] rndkey_pg;
-
-   assign rndkey_pg[255:128] = ring_en[CLKS_PER_RND-1] ? rndkey[255:128] : 128'h0;
    assign rndkey_pg[127:  0] = ring_en[CLKS_PER_RND-2] ? rndkey[127:  0] : 128'h0;
 
    generate

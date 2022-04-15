@@ -30,6 +30,7 @@ module LWC (/*AUTOARG*/
    wire [7:0]                  domain;
    wire [3:0]                  decrypt;
    wire [CLKS_PER_RND-1:0]     enrnd;
+   wire [1:0] 		       share_en;   
 
    generate
       if (MASKING == DOM1NC) begin:nc_impl

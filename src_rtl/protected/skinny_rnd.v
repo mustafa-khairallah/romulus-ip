@@ -147,6 +147,18 @@ module skinny_rnd (/*AUTOARG*/
                                                     .r(randomness[RNDW/16*j+7:RNDW/16*j]),
                                                     .clk(clk));
          end
+	 else if (MASKING==TI33) begin
+	    ti33 sbox0 (.clk(clk),
+				.y0(sb[8*j+ 7+  0:8*j+  0+0]),
+				.y1(sb[8*j+ 7+128:8*j+128+0]),
+				.y2(sb[8*j+ 7+256:8*j+256+0]),
+				.y3(sb[8*j+ 7+384:8*j+384+0]),
+				.x0(roundstate[8*j+ 7+  0:8*j+  0+0]),
+				.x1(roundstate[8*j+ 7+128:8*j+128+0]),
+				.x2(roundstate[8*j+ 7+256:8*j+256+0]),
+				.x3(roundstate[8*j+ 7+384:8*j+384+0])
+				);	    
+	 end
       end
    endgenerate
 
@@ -163,9 +175,9 @@ module skinny_rnd (/*AUTOARG*/
 
          // MixColumn
          assign mxc[ 95+128*i:64+128*i] = shr[127+128*i:96+128*i];
-				 assign mxc[ 63+128*i:32+128*i] = shr[ 95+128*i:64+128*i] ^ shr[63+128*i:32+128*i];
-				 assign mxc[ 31+128*i: 0+128*i] = shr[127+128*i:96+128*i] ^ shr[63+128*i:32+128*i];
-				 assign mxc[127+128*i:96+128*i] = shr[ 31+128*i: 0+128*i] ^ mxc[31+128*i: 0+128*i];
+	 assign mxc[ 63+128*i:32+128*i] = shr[ 95+128*i:64+128*i] ^ shr[63+128*i:32+128*i];
+	 assign mxc[ 31+128*i: 0+128*i] = shr[127+128*i:96+128*i] ^ shr[63+128*i:32+128*i];
+	 assign mxc[127+128*i:96+128*i] = shr[ 31+128*i: 0+128*i] ^ mxc[31+128*i: 0+128*i];
       end // block: shiftrowsloop
    endgenerate
 

@@ -1,8 +1,8 @@
-module romulus_multi_dim_api (/*AUTOARG*/
+module romulus_multi_dim_api_nc (/*AUTOARG*/
    // Outputs
    pdo_data, pdi, pdi_ready, rdi_ready, sdi_ready, pdo_valid, do_last, domain,
    xrst, xenc, xen, yrst, yenc, yen, zrst, zenc, zen, srst, senc, sen, iv,
-   correct_cnt, decrypt, enrnd, constant,
+   correct_cnt, decrypt, enrnd, share_en, constant,
    // Inputs
    counter, rdi, pdi_data, pdo, sdi_data, pdi_valid, rdi_valid, sdi_valid,
    pdo_ready, rst, clk
@@ -110,7 +110,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                flags <= 0;
                nonce_domain <= 0;
                correct_cnt <= 1;
-               enrnd <= 1;
+               enrnd <= 0;
                dec <= 0;
                emptymsg <= 1;
                share_en <= 1;
@@ -144,7 +144,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                flags <= 0;
                nonce_domain <= 0;
                correct_cnt <= 1;
-               enrnd <= 1;
+               enrnd <= 0;
                dec <= 0;
                emptymsg <= 1;
                share_en <= 1;
@@ -220,7 +220,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
            flagsn <= 0;
            nonce_domainn <= 0;
            correct_cntn <= 1;
-           enrndn <= 1;
+           enrndn <= 0;
            decn <= 0;
            emptymsgn <= 1;
            share_enn <= 1;
@@ -547,6 +547,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                     end
                  end // if (flags[1] == 1)
                  fsmn <= encryptad;
+		 enrndn <= 1;
               end
               else begin
                  cntn <= cntw;
@@ -575,6 +576,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                        nonce_domainn <= macfinal ^ 8 ^ 2;
                     end
                     fsmn <= encryptad;
+		    enrndn <= 1;
                  end
                  else begin
                     cntn <= cntw;
@@ -599,6 +601,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                     nonce_domainn <= macfinal ^ 8 ^ 2;
                  end
                  fsmn <= encryptad;
+		 enrndn <= 1;
               end
               else begin
                  cntn <= cntw;
@@ -760,6 +763,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                     nonce_domainn <= nonce_domain ^ 0 ^ {5'h0,nonce_domain[3],2'h0};
                  end // if (flags[1] == 1)
                  fsmn <= encryptmac;
+		 enrndn <= 1;
               end
               else begin
                  cntn <= cntw;
@@ -784,6 +788,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                     last <= 1;
                     nonce_domainn <= nonce_domain ^ 1 ^ {5'h0,nonce_domain[3],2'h0};
                     fsmn <= encryptmac;
+		    enrndn <= 1;
                  end
                  else begin
                     cntn <= cntw;
@@ -803,6 +808,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                  last <= 1;
                  nonce_domainn <= nonce_domain ^ 1 ^ {5'h0,nonce_domain[3],2'h0};
                  fsmn <= encryptmac;
+		 enrndn <= 1;
               end
               else begin
                  cntn <= cntw;
@@ -853,6 +859,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                  enrndn <= 1;
                  rdi_ready <= 1;
                  if (cnt == FINCONST) begin
+		    enrndn <= 0;
                     cntn <= BBUSC;
                     if (instruction == ENCM) begin
                        fsmn <= outputtag0;
@@ -904,6 +911,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                  rdi_ready <= 1;
                  if (cnt == FINCONST) begin
                     cntn <= BBUSC;
+		    enrndn <= 0;
                     if ((seglen == 0) && (flags[1] == 1)) begin
                        fsmn <= nonceheader;
                     end
@@ -940,6 +948,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                  rdi_ready <= 1;
                  if (cnt == FINCONST) begin
                     cntn <= BBUSC;
+		    enrndn <= 0;
                     if ((seglen == 0) && (flags[1] == 1)) begin
                        if ((instruction == ENCN) || (instruction == DECN)) begin
                           fsmn <= nonceheader;
@@ -1047,9 +1056,11 @@ module romulus_multi_dim_api (/*AUTOARG*/
                     if (share_en[STATESHARES-1] == 1) begin
                        if (instruction == ENCN) begin
                           fsmn <= encryptm;
+			  enrndn <= 1;
                        end
                        else if (instruction == DECN) begin
                           fsmn <= encryptm;
+			  enrndn <= 1;
                        end
                        else if (instruction == ENCM) begin
                           if ((seglen == 0) && (flags[1] == 1)) begin
@@ -1057,6 +1068,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                           end
                           else begin
                              fsmn <= encryptm;
+			     enrndn <= 1;
                           end
                        end
                        else if (instruction == DECM) begin
@@ -1065,6 +1077,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                           end
                           else begin
                              fsmn <= encryptm;
+			     enrndn <= 1;
                           end
                        end
                        zen <= 1;
@@ -1137,9 +1150,11 @@ module romulus_multi_dim_api (/*AUTOARG*/
                           if (rdi_valid) begin
                              if (instruction == ENCN) begin
                                 fsmn <= encryptm;
+				enrndn <= 1;
                              end
                              else if (instruction == DECN) begin
                                 fsmn <= encryptm;
+				enrndn <= 1;
                              end
                              else if (instruction == ENCM) begin
                                 fsmn <= statuse;
@@ -1208,9 +1223,11 @@ module romulus_multi_dim_api (/*AUTOARG*/
                     share_enn <= 1;
                     if (instruction == ENCN) begin
                        fsmn <= encryptm;
+		       enrndn <= 1;
                     end
                     else if (instruction == DECN) begin
                        fsmn <= encryptm;
+		       enrndn <= 1;
                     end
                     else if (instruction == ENCM) begin
                        fsmn <= statuse;
@@ -1251,6 +1268,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                  rdi_ready <= 1;
                  if (cnt == FINCONST) begin
                     cntn <= BBUSC;
+		    enrndn <= 0;
                     if ((instruction == ENCN) || (instruction == DECN)) begin
                        if (seglen == 0) begin
                           if (flags[1] == 1) begin
@@ -1340,6 +1358,7 @@ module romulus_multi_dim_api (/*AUTOARG*/
                        end
                        else begin
                           fsmn <= encryptm;
+			  enrndn <= 1;
                           xen <= 1;
                           yen <= 1;
                           zrst <= 1;
