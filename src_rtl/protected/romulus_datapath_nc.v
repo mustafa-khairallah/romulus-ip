@@ -1,9 +1,10 @@
-module romulus_datapath (/*AUTOARG*/
+module romulus_datapath_nc (/*AUTOARG*/
    // Outputs
    pdo, counter,
    // Inputs
-   constant, decrypt, pdi, sdi, rdi, domain, clk, srst, senc, sen, xrst, xenc,
-   xen, yrst, yenc, yen, zrst, zenc, zen, erst, correct_cnt, ring_en, iv
+   constant, decrypt, pdi, sdi, rdi, domain, share_en, clk, srst, senc, sen,
+   xrst, xenc, xen, yrst, yenc, yen, zrst, zenc, zen, erst, correct_cnt,
+   ring_en, iv
    ) ;
 `include "romulus_config_pkg.v"
 
@@ -16,6 +17,7 @@ module romulus_datapath (/*AUTOARG*/
    input [BUSW-1:0]   sdi;
    input [RNDW-1:0]   rdi;
    input [7:0]        domain;
+   input [1:0]        share_en;
 
    input              clk;
    input              srst, senc, sen;
@@ -49,36 +51,7 @@ module romulus_datapath (/*AUTOARG*/
    wire [127:0]               tk2;
    wire [127:0]               tk3, cin;
 
-   reg [23:0] 		      sbox_en;
-
    genvar                     i;
-
-   always @ (posedge clk) begin
-      if (ring_en[0] == 1) begin
-	 sbox_en[0] <= 1;
-      end
-      
-   end
-
-   always @ (negedge clk) begin
-      if (ring_en[0] ==1) begin
-	 sbox_en[1] <= sbox_en[0];
-      end
-   end
-
-   assign sbox_en <= {ring_en_ng[11],ring_en[11],
-		      ring_en_ng[10],ring_en[10],
-		      ring_en_ng[ 9],ring_en[ 9],
-		      ring_en_ng[ 8],ring_en[ 8],
-		      ring_en_ng[ 7],ring_en[ 7],
-		      ring_en_ng[ 6],ring_en[ 6],
-		      ring_en_ng[ 5],ring_en[ 5],
-		      ring_en_ng[ 4],ring_en[ 4],
-		      ring_en_ng[ 3],ring_en[ 3],
-		      ring_en_ng[ 2],ring_en[ 2],
-		      ring_en_ng[ 1],ring_en[ 1],
-		      ring_en_ng[ 0],ring_en[ 0]
-		      }
 
    state_update STATE (.pdo(pdo),
                        .state_o(state),
@@ -89,20 +62,23 @@ module romulus_datapath (/*AUTOARG*/
                        .rst(srst),
                        .en(sen),
                        .iv(iv),
-                       .tbc(senc)
+                       .tbc(senc),
+                       .share_en(ring_en[CLKS_PER_RND-1:CLKS_PER_RND-2])
                        );
 
    tkx_update #(.shares(KEYSHARES)) TKEYX (.tkx(key),
-                                            .sdi(sdi),
-                                            .tkxtbc(tkxtbc),
-                                            .tkxcorrect(tkxcorrect),
-                                            .clk(clk),
-                                            .rst(xrst),
-                                            .tbc(xenc),
-                                            .en(xen)
-                                            ) ;
+                                           .sdi(sdi),
+                                           .tkxtbc(tkxtbc),
+                                           .tkxcorrect(tkxcorrect),
+                                           .share_en(share_en),
+                                           .tbc_share_en(ring_en[CLKS_PER_RND-1:CLKS_PER_RND-2]),
+                                           .clk(clk),
+                                           .rst(xrst),
+                                           .tbc(xenc),
+                                           .en(xen)
+                                           ) ;
 
-   tkx_update #(.shares(1)) TKEYY (.tkx(tweak),
+   tky_update #(.shares(1)) TKEYY (.tkx(tweak),
                                    .sdi(pdi),
                                    .tkxtbc(tkytbc),
                                    .tkxcorrect(tkycorrect),
@@ -125,11 +101,11 @@ module romulus_datapath (/*AUTOARG*/
    share_router share_switch (.tbcstate(state_rtr), .statein(state),
                               .tbckey(key_rtr), .keyin(key),
                               .stateout(tbcstate), .nextstate(nextstate),
-                              .keycorrect(tkxcorrect),.pcorrectkey(tk1),
+                              .keycorrect(tkxcorrect),.pcorrectkey(tk1_pg),
                               .keyout(tkxtbc), .nextkey(nextkey)
                               ) ;
 
-   skinny_rnd tweakablecipher (.nextcnt(tkztbc),
+   skinny_rnd_nc tweakablecipher (.nextcnt(tkztbc),
                                .nextkey(nextkey),
                                .nexttweak(tkytbc),
                                .nextstate(nextstate),
@@ -139,12 +115,23 @@ module romulus_datapath (/*AUTOARG*/
                                .roundtweak(tweak_pg),
                                .roundcnt(domainseparator_pg),
                                .roundstate(state_pg),
-                               .constant(constant_pg)
+                               .constant(constant_pg),
+                               .ring_en(ring_en)
                                );
+
+   wire [255:0]               key_rtr_pg;
+   wire [255:0]               tk1_pg;
+
+   assign key_rtr_pg[255:128] = (xen & ~xenc & share_en[1]) ? key_rtr[255:128] : 0;
+   assign key_rtr_pg[127:  0] = (xen & ~xenc & share_en[0]) ? key_rtr[127:  0] : 0;
+
+   assign tk1_pg[255:128] = share_en[1] ? tk1[255:128] : 0;
+   assign tk1_pg[127:  0] = share_en[0] ? tk1[127:  0] : 0;
+
    generate
       for (i = 0; i < KEYSHARES; i = i + 1) begin:key_correction_shared
-            skinny_correctfullperm PERMA (.tko(tka[127+128*i:128*i]),.tki(key_rtr[127+128*i:128*i]));
-            skinny_lfsr2_20 LFSR3 (.so(tk1[127+128*i:128*i]), .si(tka[127+128*i:128*i]));
+         skinny_correctfullperm PERMA (.tko(tka[127+128*i:128*i]),.tki(key_rtr_pg[127+128*i:128*i]));
+         skinny_lfsr2_20 LFSR3 (.so(tk1[127+128*i:128*i]), .si(tka[127+128*i:128*i]));
       end
    endgenerate
    skinny_correctfullperm PERMB (.tko(tkb),.tki(tweak));
@@ -183,7 +170,7 @@ module state_update (/*AUTOARG*/
    // Outputs
    pdo, state_o,
    // Inputs
-   decrypt, pdi, state_i, clk, rst, en, tbc, iv
+   decrypt, pdi, state_i, share_en, clk, rst, en, tbc, iv
    ) ;
 `include "romulus_config_pkg.v"
 
@@ -193,6 +180,7 @@ module state_update (/*AUTOARG*/
    input [BUSW/8-1:0]           decrypt;
    input [BUSW-1:0]             pdi;
    input [128*STATESHARES-1:0]  state_i;
+   input [1:0]                  share_en;
    input                        clk, rst, en, tbc, iv;
 
    wire [BUSW-1:0]              pdi_eff;
@@ -241,15 +229,15 @@ module state_update (/*AUTOARG*/
       else begin
          if (en) begin
             if (tbc) begin
-	       if (en[0]) begin
-		  state[127:0] <= state_i[127:0];
-	       end
-	       else if (en[1]) begin
-		  state[255:128] <= state_i[255:128];
-	       end
-	       else begin
-		  state <= state;
-	       end
+	             if (share_en[0]) begin
+		              state[127:0] <= state_i[127:0];
+	             end
+	             else if (share_en[1]) begin
+		              state[255:128] <= state_i[255:128];
+	             end
+	             else begin
+		              state <= state;
+	             end
             end
             else begin
                state <= si;
@@ -265,6 +253,67 @@ module tkx_update (/*AUTOARG*/
    // Outputs
    tkx,
    // Inputs
+   sdi, tkxtbc, tkxcorrect, share_en, tbc_share_en, clk, rst, tbc, en
+   ) ;
+`include "romulus_config_pkg.v"
+   parameter shares = 1;
+
+   output [128*shares-1:0] tkx;
+
+   input [BUSW-1:0]        sdi;
+   input [128*shares-1:0]  tkxtbc, tkxcorrect;
+   input [1:0]             share_en;
+   input [1:0]             tbc_share_en;
+   input                   clk, rst, tbc, en;
+
+   reg [128*shares-1:0]    state;
+
+   assign tkx = state;
+
+   generate
+      always @ (posedge clk) begin
+         if (rst) begin
+            if (BUSW == 128*shares) begin:full_bus_width
+               state <= sdi;
+            end
+            else begin:half_bus_width
+               state <= {state[128*shares-BUSW-1:0],sdi};
+            end
+         end
+         else if (en) begin
+            if (tbc) begin
+               if (tbc_share_en[0]) begin
+		              state[127:0] <= tkxtbc[127:0];
+	             end
+	             else if (tbc_share_en[1]) begin
+		              state[255:128] <= tkxtbc[255:128];
+	             end
+	             else begin
+		              state <= state;
+	             end
+            end
+            else begin
+               if (share_en[0]) begin
+		              state[127:0] <= tkxcorrect[127:0];
+	             end
+	             else if (share_en[1]) begin
+		              state[255:128] <= tkxcorrect[255:128];
+	             end
+	             else begin
+		              state <= state;
+	             end
+            end
+         end
+      end // always @ (posedge clk)
+   endgenerate
+
+endmodule // tkx_update
+
+
+module tky_update (/*AUTOARG*/
+   // Outputs
+   tkx,
+   // Inputs
    sdi, tkxtbc, tkxcorrect, clk, rst, tbc, en
    ) ;
 `include "romulus_config_pkg.v"
@@ -272,9 +321,9 @@ module tkx_update (/*AUTOARG*/
 
    output [128*shares-1:0] tkx;
 
-   input [BUSW-1:0]           sdi;
+   input [BUSW-1:0]        sdi;
    input [128*shares-1:0]  tkxtbc, tkxcorrect;
-   input                      clk, rst, tbc, en;
+   input                   clk, rst, tbc, en;
 
    reg [128*shares-1:0]    state;
 
@@ -301,7 +350,7 @@ module tkx_update (/*AUTOARG*/
       end // always @ (posedge clk)
    endgenerate
 
-endmodule // tkx_update
+endmodule // tky_update
 
 module tkz_update (/*AUTOARG*/
    // Outputs

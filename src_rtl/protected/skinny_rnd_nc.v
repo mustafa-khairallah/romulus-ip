@@ -1,4 +1,4 @@
-module skinny_rnd (/*AUTOARG*/
+module skinny_rnd_nc (/*AUTOARG*/
    // Outputs
    nextcnt, nextkey, nexttweak, nextstate,
    // Inputs
@@ -41,14 +41,24 @@ module skinny_rnd (/*AUTOARG*/
                                                       .si1(roundstate[8*j+128+7:8*j+128+0]),
                                                       .si0(roundstate[8*j+  0+7:8*j+  0+0]),
                                                       .r(randomness[RNDW/16*j+7:RNDW/16*j]),
-						      .cycle(ring_en[CLKS_PER_RND-3:0]),
+						                                          .cycle(ring_en[CLKS_PER_RND-3:0]),
                                                       .clk(clk));
          end
       end
    endgenerate
 
+
+   wire [STATESHARES-1:0] sb_pg;
+   wire [KEYSHARES-1:0] rkey_pg;
+
+   assign sb_pg[255:128] = ring_en[CLKS_PER_RND-1] ? sb[255:128] : 128'h0;
+   assign sb_pg[127:  0] = ring_en[CLKS_PER_RND-2] ? sb[127:  0] : 128'h0;
+
+   assign rkey_pg[255:128] = ring_en[CLKS_PER_RND-1] ? rkey[255:128] : 128'h0;
+   assign rkey_pg[127:  0] = ring_en[CLKS_PER_RND-2] ? rkey[127:  0] : 128'h0;
+
    // Add Tweakey
-   assign atk = rkey ^ sb;
+   assign atk = rkey ^ sb_pg;
 
    generate
       for (i = 0; i < STATESHARES; i = i + 1) begin:shiftrowsloop
@@ -74,9 +84,24 @@ module skinny_rnd (/*AUTOARG*/
 
    assign rndconstant = constant;
 
+   wire [255:0] nextstate_pg;
+
+   assign nextstate_pg[255:128] = ring_en[CLKS_PER_RND-1] ? nextstate[255:128] : 128'h0;
+   assign nextstate_pg[127:  0] = ring_en[CLKS_PER_RND-2] ? nextstate[127:  0] : 128'h0;
+
+   wire [255:0] nextkey_pg;
+
+   assign nextkey_pg[255:128] = ring_en[CLKS_PER_RND-1] ? nextkey[255:128] : 128'h0;
+   assign nextkey_pg[127:  0] = ring_en[CLKS_PER_RND-2] ? nextkey[127:  0] : 128'h0;
+
+   wire [255:0] rndkey_pg;
+
+   assign rndkey_pg[255:128] = ring_en[CLKS_PER_RND-1] ? rndkey[255:128] : 128'h0;
+   assign rndkey_pg[127:  0] = ring_en[CLKS_PER_RND-2] ? rndkey[127:  0] : 128'h0;
+
    generate
       for (i = 0; i < KEYSHARES; i = i + 1) begin:keyexpansion
-         key_expansion tk3 (.ko(nextkey[127+128*i:128*i]),.ki(rndkey[127+128*i:128*i]));
+         key_expansion tk3 (.ko(nextkey[127+128*i:128*i]),.ki(rndkey_pg[127+128*i:128*i]));
       end
    endgenerate
 

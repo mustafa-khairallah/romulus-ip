@@ -24,7 +24,7 @@ parameter CNTW         = 6; // The width of the constants counter
 parameter RNDS_PER_CLK = 1;
 parameter CONSTW       = 6;
 parameter fullcnt = 1;
-parameter CLKS_PER_RND = 5; // 1 for unrolled rounds
+parameter CLKS_PER_RND = 26; // 1 for unrolled rounds
 parameter STATESHARES  = 2; // Number of ptext/ctext shares
 parameter KEYSHARES    = 2; // Number of key shares
 
@@ -102,6 +102,6 @@ parameter PINI1     = 13;
 
 parameter DOM1NC    = 14;
 
-parameter MASKING = DOM1LR;
+parameter MASKING = DOM1NC;
 
 
