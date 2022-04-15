@@ -26,7 +26,7 @@ parameter CONSTW       = 6;
 parameter fullcnt = 1;
 parameter CLKS_PER_RND = 5; // 1 for unrolled rounds
 parameter STATESHARES  = 2; // Number of ptext/ctext shares
-parameter KEYSHARES    = 1; // Number of key shares
+parameter KEYSHARES    = 2; // Number of key shares
 
 // BLK COUNTER INITIAL CONSTANT
 parameter INITCTR1 = 56'h02000000000000;
@@ -102,6 +102,6 @@ parameter PINI1     = 13;
 
 parameter DOM1NC    = 14;
 
-parameter MASKING = PINI1;
+parameter MASKING = DOM1LR;
 
 
